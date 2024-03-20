@@ -1,4 +1,14 @@
-.rounded-border{
-    border: 2px solid black;
+.background{
+    background-color: rgb(238, 220, 223);
+    min-height: 100vh;
+    height: auto;
+}
+
+.light-background{
+    background-color: white;
+}
+
+.light-border{
+    border: 2px solid pink;
     border-radius: 15px;
 }

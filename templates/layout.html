@@ -31,14 +31,22 @@
                         <li class="nav-item text-center ">
                             <a href="/Profile" class="nav-link text-light fw-bold">Profile</a>
                         </li>
+                        <li class="nav-item text-center ">
+                            <a href="/login" class="nav-link text-light fw-bold">Login</a>
+                        </li>
+                        <li class="nav-item text-center ">
+                            <a href="/register" class="nav-link text-light fw-bold">Register</a>
+                        </li>
                     </ul>
                 </div>
             </div>
         </nav>
 
         <main>
-            <div class = "m-3 p-3">
-                {% block content %}{% endblock %}
+            <div class="background">
+                <div class="p-3 border">
+                    {% block content %}{% endblock %}
+                </div>
             </div>
         </main>
 

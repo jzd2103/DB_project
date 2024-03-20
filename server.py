@@ -1,15 +1,4 @@
-
-"""
-Columbia's COMS W4111.001 Introduction to Databases
-Example Webserver
-To run locally:
-    python server.py
-Go to http://localhost:8111 in your browser.
-A debugger such as "pdb" may be helpful for debugging.
-Read about it online.
-"""
 import os
-# accessible as a variable in index.html:
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
 from flask import Flask, request, url_for, render_template, g, redirect, Response
@@ -17,19 +6,6 @@ from flask import Flask, request, url_for, render_template, g, redirect, Respons
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 
-
-#
-# The following is a dummy URI that does not connect to a valid database. You will need to modify it to connect to your Part 2 database in order to use the data.
-#
-# XXX: The URI should be in the format of: 
-#
-#     postgresql://USER:PASSWORD@34.73.36.248/project1
-#
-# For example, if you had username zy2431 and password 123123, then the following line would be:
-#
-#     DATABASEURI = "postgresql://zy2431:123123@34.73.36.248/project1"
-#
-# Modify these with your own credentials you received from TA!
 DATABASE_USERNAME = "el3194"
 DATABASE_PASSWRD = "el3194"
 DATABASE_HOST = "35.212.75.104" # change to 34.28.53.86 (34.148.107.47) if you used database 2 for part 2
@@ -90,7 +66,7 @@ def recipes():
 
 	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Tag_Name in cursor:
 		recipes.append({'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
-				  'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'tag': Tag_Name})
+				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'tag': Tag_Name})
 
 	cursor.close()
 	return render_template("recipe.html", recipes=recipes)
@@ -116,9 +92,38 @@ def add():
 
 @app.route('/login')
 def login():
-	abort(401)
-	this_is_never_executed()
+	return render_template("login.html")
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        address = request.form.get('address', '')
+        bio = request.form.get('bio', '')
+        dob = request.form.get('dob', '')
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        params = {
+            "new_name": name,
+            "new_add": address,
+            "new_bio": bio,
+            "new_dob": dob,
+            "new_username": username,
+            "new_password": password
+        }
+
+        insertion_query = """
+            INSERT INTO Users (Name, Address, Biography, Date_of_Birth, Username, Password)
+            VALUES (:new_name, :new_add, :new_bio, :new_dob, :new_username, :new_password)
+        """
+
+        g.conn.execute(text(insertion_query), params)
+        g.conn.commit()
+
+        return redirect('/')
+    
+    return render_template("register.html")
 
 if __name__ == "__main__":
 	import click

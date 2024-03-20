@@ -4,14 +4,14 @@
     <div class="row justify-content-center">
         <div class="col-12">
             {% for recipe in recipes %}
-                <div class="row rounded-border m-3 p-2">
-                    <div class="d-flex">
-                        <p class="me-3 fw-bold">{{ recipe.username }}</p>
-                        <p class="me-3">{{ recipe.recipe_name }}</p>
-                        <p class="me-3">{{ recipe.description }}</p>
-                        <p class="me-3">{{ recipe.ingredients}}</p>
-                        <p class="me-3">{{ recipe.directions }}</p>
-                        <p class="me-3">Cook time: {{ recipe.cook_time }} min.</p>
+                <div class="row light-border m-3 p-2 light-background">
+                    <div class="d-flex flex-column lig">
+                        <p class="fw-bold">{{ recipe.username }}</p>
+                        <p>Cook time: {{ recipe.cook_time }} minutes</p>
+                        <p>{{ recipe.recipe_name }}</p>
+                        <p>{{ recipe.description }}</p>
+                        <p>{{ recipe.ingredients}}</p>
+                        <p>{{ recipe.directions }}</p>
                         <p>{{ recipe.tag }}</p>
                     </div>
                 </div>
