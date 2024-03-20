@@ -83,7 +83,21 @@ def home():
 
 @app.route('/Recipes')
 def recipes():
-	return render_template("recipe.html")
+	recipe_query = """select Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Tag_Name 
+					  from recipes natural join have_recipe_tag natural join tags natural join users natural join create_recipe"""
+	cursor = g.conn.execute(text(recipe_query))	
+	recipes = []
+
+	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Tag_Name in cursor:
+		recipes.append({'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
+				  'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'tag': Tag_Name})
+
+	cursor.close()
+	return render_template("recipe.html", recipes=recipes)
+
+@app.route('/Profile')
+def profile():
+	return render_template("profile.html")
 
 
 # # Example of adding new data to the database
