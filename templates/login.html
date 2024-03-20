@@ -1,8 +1,27 @@
 {% extends "layout.html" %}
 {% block content %}
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-10 light-border light-background p-4">
+                <form method="POST" action="/login">
+                    <fieldset class="form-group">
+                        <legend class="border-bottom mb-4">Login</legend>
+                            
+                        <label for="Username" class="form-label">* Username:</label><br>
+                        <input type="text" id="Username" name="username" class="form-control"><br>
+                
+                        <label for="Password" class="form-label">* Password:</label><br>
+                        <input type="text" id="Password" name="password" class="form-control"><br>
 
-<form method="POST" action="/add">
-    <p>Name of new computer scientist: <input type="text" name="name"> <input type="submit" value="Add"></p>
-    </form>
-
+                        <input type="submit" value="Login" class = "btn btn-outline-info">
+                    </fieldset>
+                </form>
+                <div class="border-top mt-3 pt-2">
+                    <small class="mt-3 text-muted">
+                        Don't Have An Account? <a class="ml-2" href="\register">Register</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

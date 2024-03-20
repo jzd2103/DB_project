@@ -100,7 +100,7 @@ def register():
         name = request.form.get('name')
         address = request.form.get('address', '')
         bio = request.form.get('bio', '')
-        dob = request.form.get('dob', '')
+        dob = request.form.get('dob')
         username = request.form.get('username')
         password = request.form.get('password')
 
