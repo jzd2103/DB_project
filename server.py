@@ -9,55 +9,22 @@ A debugger such as "pdb" may be helpful for debugging.
 Read about it online.
 """
 import os
-  # accessible as a variable in index.html:
+# accessible as a variable in index.html:
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
-from flask import Flask, request, render_template, g, redirect, Response
+from flask import Flask, request, url_for, render_template, g, redirect, Response
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 
 
-#
-# The following is a dummy URI that does not connect to a valid database. You will need to modify it to connect to your Part 2 database in order to use the data.
-#
-# XXX: The URI should be in the format of: 
-#
-#     postgresql://USER:PASSWORD@34.73.36.248/project1
-#
-# For example, if you had username zy2431 and password 123123, then the following line would be:
-#
-#     DATABASEURI = "postgresql://zy2431:123123@34.73.36.248/project1"
-#
-# Modify these with your own credentials you received from TA!
-DATABASE_USERNAME = ""
-DATABASE_PASSWRD = ""
-DATABASE_HOST = "34.148.107.47" # change to 34.28.53.86 if you used database 2 for part 2
-DATABASEURI = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWRD}@{DATABASE_HOST}/project1"
+DATABASE_USERNAME = "el3194"
+DATABASE_PASSWRD = "el3194"
+DATABASE_HOST = "35.212.75.104" # 34.148.107.47 change to 34.28.53.86 if you used database 2 for part 2
+DATABASEURI = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWRD}@{DATABASE_HOST}/proj1part2"
 
-
-#
 # This line creates a database engine that knows how to connect to the URI above.
-#
 engine = create_engine(DATABASEURI)
-
-#
-# Example of running queries in your database
-# Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data. This is only an example showing you how to run queries in your database using SQLAlchemy.
-#
-with engine.connect() as conn:
-	create_table_command = """
-	CREATE TABLE IF NOT EXISTS test (
-		id serial,
-		name text
-	)
-	"""
-	res = conn.execute(text(create_table_command))
-	insert_table_command = """INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace')"""
-	res = conn.execute(text(insert_table_command))
-	# you need to commit for create, insert, update queries to reflect
-	conn.commit()
-
 
 @app.before_request
 def before_request():
@@ -87,94 +54,27 @@ def teardown_request(exception):
 		pass
 
 
-#
-# @app.route is a decorator around index() that means:
-#   run index() whenever the user tries to access the "/" path using a GET request
-#
-# If you wanted the user to go to, for example, localhost:8111/foobar/ with POST or GET then you could use:
-#
-#       @app.route("/foobar/", methods=["POST", "GET"])
-#
-# PROTIP: (the trailing / in the path is important)
-# 
-# see for routing: https://flask.palletsprojects.com/en/1.1.x/quickstart/#routing
-# see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
-#
 @app.route('/')
-def index():
-	"""
-	request is a special object that Flask provides to access web request information:
+def home():
+	post_query = """Select username, caption 
+					From Posts Natural Join Make Natural Join Users
+					Order by Date_Posted DESC
+					Limit 5"""
+	cursor = g.conn.execute(text(post_query))
+	posts = []
 
-	request.method:   "GET" or "POST"
-	request.form:     if the browser submitted a form, this contains the data in the form
-	request.args:     dictionary of URL arguments, e.g., {a:1, b:2} for http://localhost?a=1&b=2
+	for username, caption in cursor:
+		posts.append({'username': username, 'caption': caption})
 
-	See its API: https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data
-	"""
-
-	# DEBUG: this is debugging code to see what request looks like
-	print(request.args)
-
-
-	#
-	# example of a database query
-	#
-	select_query = "SELECT name from test"
-	cursor = g.conn.execute(text(select_query))
-	names = []
-	for result in cursor:
-		names.append(result[0])
 	cursor.close()
+	return render_template("feed.html", posts=posts)
 
-	#
-	# Flask uses Jinja templates, which is an extension to HTML where you can
-	# pass data to a template and dynamically generate HTML based on the data
-	# (you can think of it as simple PHP)
-	# documentation: https://realpython.com/primer-on-jinja-templating/
-	#
-	# You can see an example template in templates/index.html
-	#
-	# context are the variables that are passed to the template.
-	# for example, "data" key in the context variable defined below will be 
-	# accessible as a variable in index.html:
-	#
-	#     # will print: [u'grace hopper', u'alan turing', u'ada lovelace']
-	#     <div>{{data}}</div>
-	#     
-	#     # creates a <div> tag for each element in data
-	#     # will print: 
-	#     #
-	#     #   <div>grace hopper</div>
-	#     #   <div>alan turing</div>
-	#     #   <div>ada lovelace</div>
-	#     #
-	#     {% for n in data %}
-	#     <div>{{n}}</div>
-	#     {% endfor %}
-	#
-	context = dict(data = names)
+@app.route('/Recipes')
+def recipes():
+	return render_template("recipe.html")
 
 
-	#
-	# render_template looks in the templates/ folder for files.
-	# for example, the below file reads template/index.html
-	#
-	return render_template("index.html", **context)
-
-#
-# This is an example of a different path.  You can see it at:
-# 
-#     localhost:8111/another
-#
-# Notice that the function name is another() rather than index()
-# The functions for each app.route need to have different names
-#
-@app.route('/another')
-def another():
-	return render_template("another.html")
-
-
-# Example of adding new data to the database
+# # Example of adding new data to the database
 @app.route('/add', methods=['POST'])
 def add():
 	# accessing form inputs from user
@@ -202,6 +102,7 @@ if __name__ == "__main__":
 	@click.option('--threaded', is_flag=True)
 	@click.argument('HOST', default='0.0.0.0')
 	@click.argument('PORT', default=8111, type=int)
+	
 	def run(debug, threaded, host, port):
 		"""
 		This function handles command line parameters.
@@ -217,6 +118,6 @@ if __name__ == "__main__":
 
 		HOST, PORT = host, port
 		print("running on %s:%d" % (HOST, PORT))
-		app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
+		app.run(host=HOST, port=PORT, debug=True, threaded=threaded)
 
 run()
