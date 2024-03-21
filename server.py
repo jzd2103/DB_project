@@ -1,10 +1,12 @@
 import os
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
-from flask import Flask, request, url_for, render_template, g, redirect, Response
+from flask import Flask, request, url_for, render_template, g, redirect, Response, flash
+from flask_login import LoginManager, login_user
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
+login_manager = LoginManager(app)
 
 DATABASE_USERNAME = "el3194"
 DATABASE_PASSWRD = "el3194"
@@ -60,7 +62,8 @@ def home():
 @app.route('/Recipes')
 def recipes():
 	recipe_query = """select Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Tag_Name 
-					  from recipes natural join have_recipe_tag natural join tags natural join users natural join create_recipe"""
+					  from recipes natural join have_recipe_tag natural join tags natural join users natural join create_recipe
+					  limit 5"""
 	cursor = g.conn.execute(text(recipe_query))	
 	recipes = []
 
@@ -89,10 +92,46 @@ def add():
 	g.conn.commit()
 	return redirect('/')
 
+@login_manager.user_loader
+def load_user(username, password):
+	params = {"username": username, "password": password}
+	cursor = g.conn.execute(text('SELECT User_ID FROM Users WHERE Username = (:username) AND Password = (:password)'), params)
+	return str(cursor[0])
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+	if request.method == 'POST':
+		uname_input = request.form['username']
+		pword_input = request.form['password']
+
+		params = {"username": uname_input, "password": pword_input}
+		user = g.conn.execute(text('SELECT * FROM Users WHERE Username = (:username) AND Password = (:password)'), params)
+		if user:
+			login_user(user)
+
+			return redirect('/')
+		else:
+			flash('Get outta here')
+			return redirect('/login')
+
 	return render_template("login.html")
+
+@app.route('/make_tag', methods=['GET', 'POST'])
+def make_tag():
+	if request.method == 'POST':
+		tag = request.form.get('tag')
+
+		params = {"new_tag": tag}
+
+		insertion_query = """INSERT INTO Tags (Tag_Name)
+							 VALUES (:new_tag)"""
+		
+		g.conn.execute(text(insertion_query), params)
+		g.conn.commit()
+	
+	return render_template("make_tag.html")
+
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
