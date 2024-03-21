@@ -31,9 +31,15 @@
                         <li class="nav-item text-center ">
                             <a href="/Profile" class="nav-link text-light fw-bold">Profile</a>
                         </li>
-                        <li class="nav-item text-center ">
-                            <a href="/login" class="nav-link text-light fw-bold">Login</a>
-                        </li>
+                        {% if logged_in %}
+                            <li class="nav-item text-center ">
+                                <a href="/logout" class="nav-link text-light fw-bold">Logout</a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item text-center ">
+                                <a href="/login" class="nav-link text-light fw-bold">Login</a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item text-center ">
                             <a href="/register" class="nav-link text-light fw-bold">Register</a>
                         </li>

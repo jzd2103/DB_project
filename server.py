@@ -2,11 +2,11 @@ import os
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
 from flask import Flask, request, url_for, render_template, g, redirect, Response, flash
-from flask_login import LoginManager, login_user
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
-login_manager = LoginManager(app)
+
+app.config['SECRET_KEY'] = 'f4de96d218da7e5c0db80c4690b75301'
 
 DATABASE_USERNAME = "el3194"
 DATABASE_PASSWRD = "el3194"
@@ -15,6 +15,9 @@ DATABASEURI = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWRD}@{DATABASE_HO
 
 # This line creates a database engine that knows how to connect to the URI above.
 engine = create_engine(DATABASEURI)
+
+logged_in = False
+user_id = None
 
 @app.before_request
 def before_request():
@@ -46,6 +49,7 @@ def teardown_request(exception):
 
 @app.route('/')
 def home():
+	global logged_in
 	post_query = """Select username, caption 
 					From Posts Natural Join Make Natural Join Users
 					Order by Date_Posted DESC
@@ -57,7 +61,7 @@ def home():
 		posts.append({'username': username, 'caption': caption})
 
 	cursor.close()
-	return render_template("feed.html", posts=posts)
+	return render_template("feed.html", posts=posts, logged_in=logged_in)
 
 @app.route('/Recipes')
 def recipes():
@@ -92,22 +96,19 @@ def add():
 	g.conn.commit()
 	return redirect('/')
 
-@login_manager.user_loader
-def load_user(username, password):
-	params = {"username": username, "password": password}
-	cursor = g.conn.execute(text('SELECT User_ID FROM Users WHERE Username = (:username) AND Password = (:password)'), params)
-	return str(cursor[0])
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+	global logged_in
+	global user_id
 	if request.method == 'POST':
 		uname_input = request.form['username']
 		pword_input = request.form['password']
 
 		params = {"username": uname_input, "password": pword_input}
-		user = g.conn.execute(text('SELECT * FROM Users WHERE Username = (:username) AND Password = (:password)'), params)
+		user = g.conn.execute(text('SELECT User_ID FROM Users WHERE Username = (:username) AND Password = (:password)'), params).fetchone()
 		if user:
-			login_user(user)
+			logged_in = True
+			user_id = user[0]
 
 			return redirect('/')
 		else:
@@ -115,6 +116,14 @@ def login():
 			return redirect('/login')
 
 	return render_template("login.html")
+
+@app.route('/logout')
+def logout():
+	global logged_in
+	global user_id
+	logged_in = False
+	user_id = None
+	return redirect('/')
 
 @app.route('/make_tag', methods=['GET', 'POST'])
 def make_tag():
