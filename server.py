@@ -112,7 +112,7 @@ def login():
 
 			return redirect('/')
 		else:
-			flash('Get outta here')
+			flash('Invalid Username or Password', 'danger')
 			return redirect('/login')
 
 	return render_template("login.html")
@@ -123,6 +123,7 @@ def logout():
 	global user_id
 	logged_in = False
 	user_id = None
+	flash("You have been logged out successfully", 'success')
 	return redirect('/')
 
 @app.route('/make_tag', methods=['GET', 'POST'])

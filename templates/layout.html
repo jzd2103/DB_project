@@ -50,16 +50,21 @@
 
         <main>
             <div class="background">
-                <div class="p-3 border">
-                    {% with messages = get_flashed_messages(with_categories = true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }}">
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
+                <div class="p-3">
+
+                    <div class="container">
+                        <div class="row">
+                            {% with messages = get_flashed_messages(with_categories = true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} text-light fw-bold text-center">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        </div>
+                    </div>
 
                     {% block content %}{% endblock %}
                 </div>
