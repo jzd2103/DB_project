@@ -95,6 +95,10 @@ def login():
 		uname_input = request.form['username']
 		pword_input = request.form['password']
 
+		if not uname_input or not pword_input:
+			flash('Username and Password Required', 'danger')
+			return redirect('/login')
+
 		params = {"username": uname_input, "password": pword_input}
 		user = g.conn.execute(text('SELECT User_ID FROM Users WHERE Username = (:username) AND Password = (:password)'), params).fetchone()
 		if user:
@@ -140,12 +144,13 @@ def register():
         name = request.form.get('name')
         address = request.form.get('address', '')
         bio = request.form.get('bio', '')
-        
-        # Handle empty value for dob
-        dob = request.form.get('dob') or None
-        
+        dob = request.form.get('dob')
         username = request.form.get('username')
         password = request.form.get('password')
+
+        if not name or not dob or not username or not password:
+            flash('* fields are required', 'danger')
+            return redirect('/register')
 
         params = {
             "new_name": name,
@@ -165,7 +170,7 @@ def register():
         g.conn.commit()
 
         flash(f"Account created successfully for {name}!", 'success')
-        return redirect('/')
+        return redirect('/login')
     else:
     	return render_template("register.html", logged_in=logged_in)
 
