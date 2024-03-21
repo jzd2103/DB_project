@@ -49,7 +49,6 @@ def teardown_request(exception):
 
 @app.route('/')
 def home():
-	global logged_in
 	post_query = """Select username, caption 
 					From Posts Natural Join Make Natural Join Users
 					Order by Date_Posted DESC
@@ -61,6 +60,8 @@ def home():
 		posts.append({'username': username, 'caption': caption})
 
 	cursor.close()
+
+	global logged_in
 	return render_template("feed.html", posts=posts, logged_in=logged_in)
 
 @app.route('/Recipes')
@@ -76,25 +77,15 @@ def recipes():
 				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'tag': Tag_Name})
 
 	cursor.close()
-	return render_template("recipe.html", recipes=recipes)
+
+	global logged_in
+	return render_template("recipe.html", recipes=recipes, logged_in=logged_in)
 
 @app.route('/Profile')
 def profile():
-	return render_template("profile.html")
+	global logged_in
+	return render_template("profile.html", logged_in=logged_in)
 
-
-# # Example of adding new data to the database
-@app.route('/add', methods=['POST'])
-def add():
-	# accessing form inputs from user
-	name = request.form['name']
-	
-	# passing params in for each variable into query
-	params = {}
-	params["new_name"] = name
-	g.conn.execute(text('INSERT INTO test(name) VALUES (:new_name)'), params)
-	g.conn.commit()
-	return redirect('/')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -170,8 +161,9 @@ def register():
         g.conn.commit()
 
         return redirect('/')
-    
-    return render_template("register.html")
+	
+    global logged_in
+    return render_template("register.html", logged_in=logged_in)
 
 if __name__ == "__main__":
 	import click
