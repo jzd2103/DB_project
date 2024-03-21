@@ -141,14 +141,16 @@ def make_tag():
 	return render_template("make_tag.html")
 
 
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         name = request.form.get('name')
         address = request.form.get('address', '')
         bio = request.form.get('bio', '')
-        dob = request.form.get('dob')
+        
+        # Handle empty value for dob
+        dob = request.form.get('dob') or None
+        
         username = request.form.get('username')
         password = request.form.get('password')
 
@@ -169,9 +171,10 @@ def register():
         g.conn.execute(text(insertion_query), params)
         g.conn.commit()
 
+        flash(f"Account created successfully for {name}!", 'success')
         return redirect('/')
-    
-    return render_template("register.html")
+    else:
+        return render_template("register.html")
 
 if __name__ == "__main__":
 	import click
