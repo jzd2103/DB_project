@@ -12,3 +12,9 @@
     border: 2px solid pink;
     border-radius: 15px;
 }
+
+div h1{
+    font-family: serif;
+    color: rgb(189, 69, 69);
+    font-weight: bold;
+}
