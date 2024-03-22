@@ -18,3 +18,9 @@ div h1{
     color: rgb(189, 69, 69);
     font-weight: bold;
 }
+
+.image_file{
+    width: 100%;
+    margin: 2%;
+    border-radius: 30px;
+}

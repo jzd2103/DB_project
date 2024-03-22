@@ -50,15 +50,15 @@ def teardown_request(exception):
 
 @app.route('/')
 def home():
-	post_query = """Select username, caption 
+	post_query = """Select username, caption, image_URL
 					From Posts Natural Join Make Natural Join Users
 					Order by Date_Posted DESC
-					Limit 5"""
+					"""
 	cursor = g.conn.execute(text(post_query))
 	posts = []
 
-	for username, caption in cursor:
-		posts.append({'username': username, 'caption': caption})
+	for username, caption, image_url in cursor:
+		posts.append({'username': username, 'caption': caption, 'image_url': image_url})
 
 	cursor.close()
 
@@ -138,7 +138,7 @@ def create_post():
 		return redirect('/Create')
 	
 	current_time = datetime.now()
-	formatted_time = current_time.strftime("%m/%d/%y")
+	formatted_time = current_time.strftime("%y/%m/%d")
 
 	if video_file.filename != '':
 		file_path = save_video(video_file)
