@@ -1,7 +1,8 @@
-import os
+import os, secrets
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
 from flask import Flask, request, url_for, render_template, g, redirect, Response, flash
+from datetime import datetime
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
@@ -86,6 +87,74 @@ def profile():
 	global logged_in
 	return render_template("profile.html", logged_in=logged_in)
 
+@app.route('/Create')
+def create():
+	global logged_in
+	return render_template("create.html", logged_in=logged_in)
+
+def save_image(form_image):
+	random_hex = secrets.token_hex(8)
+	_, f_ext = os.path.splitext(form_image.filename)
+	image_fn = random_hex + f_ext
+	image_path = os.path.join(app.root_path, 'static/images', image_fn)
+	form_image.save(image_path)
+
+	return image_fn
+
+def save_video(form_video):
+	random_hex = secrets.token_hex(8)
+	_, f_ext = os.path.splitext(form_video.filename)
+	video_fn = random_hex + f_ext
+	video_path = os.path.join(app.root_path, 'static/videos', video_fn)
+	form_video.save(save_video_path)
+
+	return video_fn
+
+@app.route('/create_post', methods=['POST'])
+def create_post():
+	global logged_in
+	global user_id
+
+	caption = request.form['caption']
+	video_file = request.files.get('video_file')
+	image_file = request.files.get('image_file')
+
+	if video_file.filename == '' and image_file.filename == '':
+		flash("Video or Image file required", 'danger')
+		return redirect('/Create')
+	
+	if video_file.filename != '' and image_file.filename != '':
+		flash("Upload only one media file", 'danger')
+		return redirect('/Create')
+	
+	current_time = datetime.now()
+	formatted_time = current_time.strftime("%m/%d/%y")
+
+	if video_file.filename != '':
+		file_path = save_video(video_file)
+		insertion_query1 = """INSERT INTO Posts (Caption, Date_Posted, Video_Url)
+							  VALUES (:caption, :date, :media_file)
+							  RETURNING Post_ID"""		
+	elif image_file.filename != '':
+		file_path = save_image(image_file)	
+		insertion_query1 = """INSERT INTO Posts (Caption, Date_Posted, Image_Url)
+							  VALUES (:caption, :date, :media_file)
+							  RETURNING Post_ID"""	
+
+	params1 = {'caption': caption, 'date': formatted_time, 'media_file': file_path}
+	new_post = g.conn.execute(text(insertion_query1), params1)
+	post_id = new_post.fetchone()[0]
+
+	params2 = {'user_id': user_id, 'post_id': post_id}
+	insertion_query2 = """INSERT INTO Make (User_ID, Post_ID)
+							  VALUES (:user_id, :post_id)"""
+		
+	g.conn.execute(text(insertion_query2), params2)
+	g.conn.commit()
+
+	flash("Post created successfully", 'success')
+	return redirect('/')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -101,6 +170,7 @@ def login():
 
 		params = {"username": uname_input, "password": pword_input}
 		user = g.conn.execute(text('SELECT User_ID FROM Users WHERE Username = (:username) AND Password = (:password)'), params).fetchone()
+		
 		if user:
 			logged_in = True
 			user_id = user[0]
