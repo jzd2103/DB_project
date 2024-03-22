@@ -10,7 +10,13 @@
         <div class="col-8">
             {% for post in posts %}
                 <div class="row light-border light-background m-3 p-2 justify-content-center">
-                    <img class="image_file" src="static\images\{{post.image_url}}">
+                    {% if post.image_url %}
+                        <img class="image_file" src="static\images\{{post.image_url}}">
+                    {% else %}
+                        <video class="video_file" controls>
+                            <source src="static\videos\{{post.video_url}}">
+                        </video>
+                    {% endif %}
                     <div class="d-flex mt-1">
                         <p class="me-3 fw-bold">{{ post.username }}</p>
                         <p>{{ post.caption }}</p>

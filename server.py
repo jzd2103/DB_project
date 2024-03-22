@@ -50,15 +50,15 @@ def teardown_request(exception):
 
 @app.route('/')
 def home():
-	post_query = """Select username, caption, image_URL
+	post_query = """Select username, caption, image_URL, video_URL
 					From Posts Natural Join Make Natural Join Users
 					Order by Date_Posted DESC
 					"""
 	cursor = g.conn.execute(text(post_query))
 	posts = []
 
-	for username, caption, image_url in cursor:
-		posts.append({'username': username, 'caption': caption, 'image_url': image_url})
+	for username, caption, image_url, video_url in cursor:
+		posts.append({'username': username, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
 
 	cursor.close()
 
