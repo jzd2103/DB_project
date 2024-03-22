@@ -38,11 +38,12 @@
     <div class="container mt-4">
         <div class="row justify-content-center">
             <div class="col-10 light-border light-background p-4">
-                <form method="POST" action="/register">
+                <form method="POST" action="/make_tag">
                     <fieldset class="form-group">
                         <legend class="border-bottom mb-4">Create New Tag</legend>
-                
-                        <input type="submit" value="Create" class = "btn btn-outline-info">
+                            <label for="Tag" class="form-label">* Tag Name:</label><br>
+                            <input type="text" id="Tag" name="tag" class="form-control"><br>
+                            <input type="submit" value="Create" class = "btn btn-outline-info">
                     </fieldset>
                 </form>
             </div>

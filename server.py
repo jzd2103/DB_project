@@ -85,11 +85,21 @@ def recipes():
 @app.route('/Profile')
 def profile():
 	global logged_in
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+	
 	return render_template("profile.html", logged_in=logged_in)
 
 @app.route('/Create')
 def create():
 	global logged_in
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+
 	return render_template("create.html", logged_in=logged_in)
 
 def save_image(form_image):
@@ -106,7 +116,7 @@ def save_video(form_video):
 	_, f_ext = os.path.splitext(form_video.filename)
 	video_fn = random_hex + f_ext
 	video_path = os.path.join(app.root_path, 'static/videos', video_fn)
-	form_video.save(save_video_path)
+	form_video.save(video_path)
 
 	return video_fn
 
@@ -147,7 +157,7 @@ def create_post():
 
 	params2 = {'user_id': user_id, 'post_id': post_id}
 	insertion_query2 = """INSERT INTO Make (User_ID, Post_ID)
-							  VALUES (:user_id, :post_id)"""
+						  VALUES (:user_id, :post_id)"""
 		
 	g.conn.execute(text(insertion_query2), params2)
 	g.conn.commit()
@@ -160,6 +170,11 @@ def create_post():
 def login():
 	global logged_in
 	global user_id
+
+	if(logged_in):
+		flash('You are already logged in', 'danger')
+		return redirect('/')
+	
 	if request.method == 'POST':
 		uname_input = request.form['username']
 		pword_input = request.form['password']
@@ -169,12 +184,15 @@ def login():
 			return redirect('/login')
 
 		params = {"username": uname_input, "password": pword_input}
-		user = g.conn.execute(text('SELECT User_ID FROM Users WHERE Username = (:username) AND Password = (:password)'), params).fetchone()
+		user = g.conn.execute(text("""SELECT User_ID 
+							 		  FROM Users 
+							 		  WHERE Username = (:username) AND Password = (:password)"""), params).fetchone()
 		
 		if user:
 			logged_in = True
 			user_id = user[0]
 
+			flash('Login successful', 'success')
 			return redirect('/')
 		else:
 			flash('Invalid Username or Password', 'danger')
@@ -186,25 +204,54 @@ def login():
 def logout():
 	global logged_in
 	global user_id
+
+	if(not logged_in):
+		flash('Error: you are not logged in', 'danger')
+		return redirect('/')
+	
 	logged_in = False
 	user_id = None
 	flash("You have been logged out successfully", 'success')
 	return redirect('/')
 
-@app.route('/make_tag', methods=['GET', 'POST'])
+@app.route('/make_tag', methods=['POST'])
 def make_tag():
-	if request.method == 'POST':
-		tag = request.form.get('tag')
+	global user_id
+	tag = request.form.get('tag')
+	if not tag:
+		flash('Please enter a tag', 'danger')
+		return redirect('/Create')
 
-		params = {"new_tag": tag}
+	params = {"tag": tag}
 
+	check_query = """SELECT tag_name 
+					 FROM Tags 
+					 WHERE tag_name = (:tag)"""
+
+	tag_exists = g.conn.execute(text(check_query), params).fetchone()
+	if tag_exists:
+		flash("The tag already exists. Try another tag", 'danger')
+		return redirect('/Create')
+
+	else:
 		insertion_query = """INSERT INTO Tags (Tag_Name)
-							 VALUES (:new_tag)"""
+							 VALUES (:tag)
+							 RETURNING Tag_ID"""
+			
+		new_tag = g.conn.execute(text(insertion_query), params)
+		tag_id = new_tag.fetchone()[0]
+
+		params2 = {"user_id": user_id, "tag_id": tag_id}
+
+		insertion_query2 = """INSERT INTO Make_TAG (User_ID, Tag_ID)
+							  VALUES (:user_id, :tag_id)"""
 		
-		g.conn.execute(text(insertion_query), params)
+		g.conn.execute(text(insertion_query2), params2)
 		g.conn.commit()
-	
-	return render_template("make_tag.html")
+
+
+	flash("Tag created successfully", 'success')
+	return redirect('/')
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -240,7 +287,7 @@ def register():
         g.conn.commit()
 
         flash(f"Account created successfully for {name}!", 'success')
-        return redirect('/login')
+        return redirect('/')
     else:
     	return render_template("register.html", logged_in=logged_in)
 
