@@ -11,7 +11,14 @@
                         <p>{{ recipe.recipe_name }}</p>
                         <p>{{ recipe.description }}</p>
                         <p>{{ recipe.ingredients}}</p>
-                        <p>{{ recipe.directions }}</p>
+                        <p>Directions: </p>
+                        <ol>
+                            {% for direction in recipe.directions.split('.') %}
+                                {% if direction != '' %}
+                                    <li>{{ direction + '.' }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
                         <p>{{ recipe.tag }}</p>
                     </div>
                 </div>

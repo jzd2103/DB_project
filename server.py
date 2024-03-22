@@ -120,6 +120,46 @@ def save_video(form_video):
 
 	return video_fn
 
+@app.route('/create_recipe', methods=['POST'])
+def create_recipe():
+	global user_id
+
+	recipe_name = request.form['recipe_name']
+	description = request.form['description']
+	ingredients = request.form['ingredients']
+	directions = request.form['directions']
+	cook_time = request.form['cook_time']
+	if cook_time:
+		cook_time = int(cook_time)
+	image_file = request.files.get('image_file')
+
+	if not recipe_name or not ingredients or not directions:
+		flash('* fields are required', 'danger')
+		return redirect('/Create')
+	
+	if image_file.filename != '':
+		file_path = save_image(image_file)
+	
+	params1 = {'recipe_name': recipe_name, 'description': description, 'ingredients': ingredients, 
+		   	  'directions': directions, 'cook_time': cook_time, 'media_file': file_path}
+	
+	insertion_query = """INSERT INTO Recipes (Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_Url)
+						 VALUES (:recipe_name, :description, :ingredients, :directions, :cook_time, :media_file)
+						 RETURNING Recipe_ID"""
+
+	new_recipe = g.conn.execute(text(insertion_query), params1)
+	recipe_id = new_recipe.fetchone()[0]
+
+	params2 = {'user_id': user_id, 'recipe_id': recipe_id}
+	insertion_query2 = """INSERT INTO Create_Recipe (User_ID, Recipe_ID)
+						  VALUES (:user_id, :recipe_id)"""
+		
+	g.conn.execute(text(insertion_query2), params2)
+	g.conn.commit()
+
+	flash("Recipe created successfully", 'success')
+	return redirect('/')
+
 @app.route('/create_post', methods=['POST'])
 def create_post():
 	global logged_in
