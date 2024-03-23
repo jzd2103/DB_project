@@ -9,17 +9,24 @@
     <div class="row justify-content-center">
         <div class="col-8">
             {% for recipe in recipes %}
-                <div class="row light-border m-3 p-2 light-background">
-                    <div class="d-flex flex-column">
-                        {% if recipe.image_file %}
-                            <img class="image_file" src="static\images\{{recipe.image_file}}">
-                        {% endif %}
-                        <p class="fw-bold">{{ recipe.username }}</p>
-                        <p>Cook time: {{ recipe.cook_time }} minutes</p>
-                        <p>{{ recipe.recipe_name }}</p>
+                <div class="row light-border light-background m-3 p-2 justify-content-center">
+                    <div class="col-11">
+                        <h1 class = "text-center"> {{ recipe.recipe_name }}</h1>
+                        <p class = "text-center">by {{recipe.username }}</p>
+                    </div>
+
+                    {% if recipe.image_file %}
+                        <img class="mt-0 image_file" src="static\images\{{recipe.image_file}}">
+                    {% endif %}
+
+                    <div class="d-flex mt-1">
                         {% if recipe.description != '' %}
-                            <p>{{ recipe.description }}</p>
+                            <p><strong>Decription:</strong> {{ recipe.description }}</p>
                         {% endif %}
+                    </div>
+
+                    <div>
+                        <p><strong>Cook time:</strong> {{ recipe.cook_time }} minutes</p>
                         <p><strong>Ingredients:</strong> {{ recipe.ingredients}}</p>
                         <p class="fw-bold">Directions:</p>
                         <ol>

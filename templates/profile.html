@@ -1,12 +1,77 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<div class="rounded-border p-3 justify-content-center" > 
-    <h1>HI</h1>
-    <h2>HI</h2>
-    <p> john</p>
+<div class="container-fluid mt-4">
+    <div class="row border">
+        <div class="col-6 border">
+            <div class="row justify-content-center">
+                <div class="col-10">
+                    <h1 class="text-center pb-2 border-bottom border-3 border-light"> Posts</h1>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-10">
+                    {% for post in posts %}
+                        <div class="row light-border light-background m-3 p-2 justify-content-center">
+                            {% if post.image_url %}
+                                <img class="image_file" src="static\images\{{post.image_url}}">
+                            {% else %}
+                                <video class="video_file" controls>
+                                    <source src="static\videos\{{post.video_url}}">
+                                </video>
+                            {% endif %}
+                            <div class="d-flex mt-1">
+                                <p class="me-3 fw-bold">{{ post.username }}</p>
+                                <p>{{ post.caption }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="row justify-content-center">
+                <div class="col-10">
+                    <h1 class="text-center pb-2 border-bottom border-3 border-light"> Recipes</h1>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-10">
+                    {% for recipe in recipes %}
+                        <div class="row light-border light-background m-3 p-2 justify-content-center">
+                            <div class="col-11">
+                                <h1 class = "text-center"> {{ recipe.recipe_name }}</h1>
+                                <p class = "text-center">by {{recipe.username }}</p>
+                            </div>
+        
+                            {% if recipe.image_file %}
+                                <img class="mt-0 image_file" src="static\images\{{recipe.image_file}}">
+                            {% endif %}
+        
+                            <div class="d-flex mt-1">
+                                {% if recipe.description != '' %}
+                                    <p><strong>Decription:</strong> {{ recipe.description }}</p>
+                                {% endif %}
+                            </div>
+        
+                            <div>
+                                <p><strong>Cook time:</strong> {{ recipe.cook_time }} minutes</p>
+                                <p><strong>Ingredients:</strong> {{ recipe.ingredients}}</p>
+                                <p class="fw-bold">Directions:</p>
+                                <ol>
+                                    {% for direction in recipe.directions.split('.') %}
+                                        {% if direction != '' %}
+                                            <li>{{ direction + '.' }}</li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ol>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<div class="rounded-border p-3 mt-3">
-    <p>lorem</p>
-</div>
+
 {% endblock %}

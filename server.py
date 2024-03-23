@@ -86,12 +86,39 @@ def recipes():
 @app.route('/Profile')
 def profile():
 	global logged_in
+	global user_id
 
 	if(not logged_in):
 		flash('You are not logged in', 'danger')
 		return redirect('/')
 	
-	return render_template("profile.html", logged_in=logged_in)
+	post_query = f"""Select username, caption, image_URL, video_URL
+					From Posts Natural Join Make Natural Join Users
+					Where User_ID = {user_id}
+					Order by Date_Posted DESC
+					"""
+	
+	recipe_query = f"""Select Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
+					  from Recipes natural join Users natural join Create_recipe
+					  Where User_ID = {user_id}"""
+
+	posts, recipes = [], []
+	cursor = g.conn.execute(text(post_query))
+
+	for username, caption, image_url, video_url in cursor:
+		posts.append({'username': username, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
+
+	cursor = g.conn.execute(text(recipe_query))	
+
+	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
+		print(Recipe_Name)
+		recipes.append({'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
+				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
+	
+
+	cursor.close()
+
+	return render_template("profile.html", logged_in=logged_in, posts=posts, recipes=recipes)
 
 @app.route('/Create')
 def create():
