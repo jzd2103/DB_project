@@ -11,6 +11,9 @@
             {% for recipe in recipes %}
                 <div class="row light-border m-3 p-2 light-background">
                     <div class="d-flex flex-column">
+                        {% if recipe.image_file %}
+                            <img class="image_file" src="static\images\{{recipe.image_file}}">
+                        {% endif %}
                         <p class="fw-bold">{{ recipe.username }}</p>
                         <p>Cook time: {{ recipe.cook_time }} minutes</p>
                         <p>{{ recipe.recipe_name }}</p>

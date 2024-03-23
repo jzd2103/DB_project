@@ -141,8 +141,6 @@ def create_recipe():
 	
 	if image_file is not None and image_file.filename != '':
 		file_path = save_image(image_file)
-	else:
-		file_path = None
 	
 	params1 = {'recipe_name': recipe_name, 'description': description, 'ingredients': ingredients, 
 		   	  'directions': directions, 'cook_time': cook_time, 'media_file': file_path}
