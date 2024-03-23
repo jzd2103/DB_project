@@ -15,7 +15,7 @@
 
 div h1{
     font-family: serif;
-    color: rgb(189, 69, 69);
+    color: rgb(180, 20, 20);
     font-weight: bold;
 }
 
@@ -29,4 +29,8 @@ div h1{
     height: 30vh;
     margin: 2%;
     border-radius: 30px;
+}
+
+.min-width{
+    min-width: 350px;
 }

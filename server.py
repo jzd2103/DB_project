@@ -74,7 +74,6 @@ def recipes():
 	recipes = []
 
 	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
-		print(Recipe_Name)
 		recipes.append({'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
 				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
 
@@ -102,7 +101,10 @@ def profile():
 					  from Recipes natural join Users natural join Create_recipe
 					  Where User_ID = {user_id}"""
 
-	posts, recipes = [], []
+	user_query = f"""Select Name, Address, Biography, Date_of_Birth, Username
+					 From Users Where User_ID = {user_id}"""
+	
+	posts, recipes, users = [], [], []
 	cursor = g.conn.execute(text(post_query))
 
 	for username, caption, image_url, video_url in cursor:
@@ -111,14 +113,69 @@ def profile():
 	cursor = g.conn.execute(text(recipe_query))	
 
 	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
-		print(Recipe_Name)
 		recipes.append({'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
 				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
 	
+	cursor = g.conn.execute(text(user_query))
 
+	for Name, Address, Biography, Date_of_Birth, Username in cursor:
+		users.append({'name': Name, 'address': Address, 'biography': Biography, 'date_of_birth': Date_of_Birth, 'username': Username})
+	
 	cursor.close()
 
-	return render_template("profile.html", logged_in=logged_in, posts=posts, recipes=recipes)
+	return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes)
+
+@app.route('/EditProfile', methods=['POST', 'GET'])
+def edit_profile():
+	global logged_in
+	global user_id
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+	
+	if request.method == 'POST':
+		name = request.form.get('name')
+		address = request.form.get('address')
+		bio = request.form.get('bio')
+		dob = request.form.get('dob')
+		username = request.form.get('username')
+		password = request.form.get('password')
+
+		params = {}
+		
+		update_query = "Update Users Set "
+
+		if name:
+			update_query += "Name = (:new_name), "
+			params['new_name'] = name
+		if address:
+			update_query += "Address = (:new_add), "
+			params['new_add'] = address
+		if bio:
+			update_query += "Biography = (:new_bio), "
+			params['new_bio'] = bio
+		if dob:
+			update_query += "Date_of_Birth = (:new_dob), "
+			params['new_dob'] = dob
+		if username:
+			update_query += "Username = (:new_username), "
+			params['new_username'] = username
+		if password:
+			update_query += "Password = (:new_password), "
+			params['new_password'] = name
+
+		update_query = update_query.rstrip(', ')
+		update_query += "Where User_ID = (:user_id)"
+		params['user_id'] = user_id
+
+		g.conn.execute(text(update_query), params)
+		g.conn.commit()
+
+		flash("Your profile has been updated successfully", 'success')
+		return redirect('/')
+
+	return render_template('update_profile.html', logged_in=logged_in)
 
 @app.route('/Create')
 def create():
