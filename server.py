@@ -67,15 +67,16 @@ def home():
 
 @app.route('/Recipes')
 def recipes():
-	recipe_query = """select Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Tag_Name 
-					  from recipes natural join have_recipe_tag natural join tags natural join users natural join create_recipe
-					  limit 5"""
+	recipe_query = """Select Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
+					  from Recipes natural join Users natural join Create_recipe"""
+	
 	cursor = g.conn.execute(text(recipe_query))	
 	recipes = []
 
-	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Tag_Name in cursor:
+	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
+		print(Recipe_Name)
 		recipes.append({'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
-				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'tag': Tag_Name})
+				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
 
 	cursor.close()
 
@@ -129,16 +130,19 @@ def create_recipe():
 	ingredients = request.form['ingredients']
 	directions = request.form['directions']
 	cook_time = request.form['cook_time']
+	image_file = request.files.get('image_file')
+
 	if cook_time:
 		cook_time = int(cook_time)
-	image_file = request.files.get('image_file')
 
 	if not recipe_name or not ingredients or not directions:
 		flash('* fields are required', 'danger')
 		return redirect('/Create')
 	
-	if image_file.filename != '':
+	if image_file is not None and image_file.filename != '':
 		file_path = save_image(image_file)
+	else:
+		file_path = None
 	
 	params1 = {'recipe_name': recipe_name, 'description': description, 'ingredients': ingredients, 
 		   	  'directions': directions, 'cook_time': cook_time, 'media_file': file_path}

@@ -1,17 +1,24 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
+<div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-12">
+        <div class="col-8">
+            <h1 class="text-center pb-2 border-bottom border-3 border-light"> Recipes</h1>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-8">
             {% for recipe in recipes %}
                 <div class="row light-border m-3 p-2 light-background">
-                    <div class="d-flex flex-column lig">
+                    <div class="d-flex flex-column">
                         <p class="fw-bold">{{ recipe.username }}</p>
                         <p>Cook time: {{ recipe.cook_time }} minutes</p>
                         <p>{{ recipe.recipe_name }}</p>
-                        <p>{{ recipe.description }}</p>
-                        <p>{{ recipe.ingredients}}</p>
-                        <p>Directions: </p>
+                        {% if recipe.description != '' %}
+                            <p>{{ recipe.description }}</p>
+                        {% endif %}
+                        <p><strong>Ingredients:</strong> {{ recipe.ingredients}}</p>
+                        <p class="fw-bold">Directions:</p>
                         <ol>
                             {% for direction in recipe.directions.split('.') %}
                                 {% if direction != '' %}
@@ -19,7 +26,6 @@
                                 {% endif %}
                             {% endfor %}
                         </ol>
-                        <p>{{ recipe.tag }}</p>
                     </div>
                 </div>
             {% endfor %}
