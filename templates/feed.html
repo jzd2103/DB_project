@@ -22,6 +22,25 @@
                         <p class="me-3 fw-bold">{{ post.username }}</p>
                         <p>{{ post.caption }}</p>
                     </div>
+                    <div class="col-6">
+                        <a class="btn btn-outline-info btn-block w-100" href="/rate?post_id={{ post.post_id }}&rating=1">Yum</a>
+                    </div>
+                    <div class="col-6">
+                        <a class="btn btn-outline-info btn-block w-100" href="/rate?post_id={{ post.post_id }}&rating=-1">Yuck</a>
+                    </div>
+                    <div class = "col-11 m-3 p-3 pb-1 comments ">
+                        {% if post.comments %}
+                            {% for comment in post.comments %}
+                                {% if comment %}
+                                    <p>{{ comment }}</p>
+                                {% else %}
+                                    <p>No comments available</p>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p>No comments available</p>
+                        {% endif %}
+                    </div>
                 </div>
             {% endfor %}
         </div>

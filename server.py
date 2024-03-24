@@ -50,15 +50,24 @@ def teardown_request(exception):
 
 @app.route('/')
 def home():
-	post_query = """Select username, caption, image_URL, video_URL
+	post_query = """Select username, post_id, caption, image_URL, video_URL
 					From Posts Natural Join Make Natural Join Users
 					Order by Date_Posted DESC
 					"""
 	cursor = g.conn.execute(text(post_query))
 	posts = []
 
-	for username, caption, image_url, video_url in cursor:
-		posts.append({'username': username, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
+	for username, post_id, caption, image_url, video_url in cursor:
+		comments = []
+		comment_query = """Select Comment From Rate where post_id = (:post_id)"""
+		comment_cursor = g.conn.execute(text(comment_query), {'post_id': post_id})
+
+		for comment in comment_cursor:
+			comments.append(comment[0])
+
+		comment_cursor.close()
+
+		posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url, 'comments': comments})
 
 	cursor.close()
 
@@ -180,6 +189,36 @@ def edit_profile():
 		return redirect('/Profile')
 
 	return render_template('update_profile.html', logged_in=logged_in)
+
+@app.route('/rate', methods=['GET'])
+def rate():
+	global logged_in
+	global user_id
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+	
+	post_id = request.args.get('post_id')
+	rating = request.args.get('rating')
+	params = {'user_id': user_id, 'post_id': post_id, 'rating': rating}
+
+	check_query = """Select * from Rate where user_id = (:user_id) and post_id = (:post_id)"""
+	exists_rate = g.conn.execute(text(check_query), params).fetchone()
+
+	if exists_rate:
+		update_rate = """Update Rate Set Rating = (:rating) Where user_id = (:user_id) AND post_id = (:post_id)"""
+		g.conn.execute(text(update_rate), params)
+		flash('Rate updated', 'success')
+	else: 
+		insertion_query = """INSERT INTO Rate (User_ID, Post_ID, Rating)
+							VALUES (:user_id, :post_id, :rating)"""
+	
+		g.conn.execute(text(insertion_query), params)
+		flash('Rating added successfully', 'success')
+		
+	g.conn.commit()
+	return redirect('/')
 
 @app.route('/EditPost', methods=['POST', 'GET'])
 def edit_post():

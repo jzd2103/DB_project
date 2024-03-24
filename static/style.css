@@ -34,3 +34,7 @@ div h1{
 .min-width{
     min-width: 350px;
 }
+
+.comments{
+    border: 1px solid pink;
+}
