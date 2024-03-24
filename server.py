@@ -188,10 +188,6 @@ def edit_post():
 	
 	if request.method == 'POST':
 		post_id = request.form['post_id']
-		if post_id:
-			print(post_id)
-		else:
-			print("none")
 		caption = request.form['caption']
 		video_file = request.files.get('video_file')
 		image_file = request.files.get('image_file')
