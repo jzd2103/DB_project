@@ -142,6 +142,10 @@ def edit_profile():
 		username = request.form.get('username')
 		password = request.form.get('password')
 
+		if not name and not address and not bio and not dob and not username and not password:
+			flash("Nothing was entered", 'danger')
+			return redirect('/EditProfile')
+
 		params = {}
 		
 		update_query = "Update Users Set "
@@ -196,12 +200,15 @@ def edit_post():
 		video_file = request.files.get('video_file')
 		image_file = request.files.get('image_file')
 		
-		if video_file.filename != '' and image_file.filename != '':
+		if not caption and not video_file and not image_file:
+			flash("Nothing was entered", 'danger')
+			return redirect(f'/EditPost?post_id={post_id}')
+		elif video_file.filename != '' and image_file.filename != '':
 			flash("Upload only one media file", 'danger')
-			return redirect(f'/EditPost?post_id={{post_id}}')
+			return redirect(f'/EditPost?post_id={post_id}')
 		
 		current_time = datetime.now()
-		formatted_time = current_time.strftime("%y/%m/%d")
+		formatted_time = current_time.strftime("%Y-%m-%d")
 
 		params = {}
 		
@@ -219,12 +226,12 @@ def edit_post():
 			update_query += "Image_URL = (:image_file), "
 			params['image_file'] = file_path
 
+		update_query += "Date_Posted = (:date_posted)"
+		params['date_posted'] = formatted_time
+
 		update_query = update_query.rstrip(', ')
 		update_query += " Where Post_ID = (:post_id)"
 		params['post_id'] = post_id
-
-		print(update_query)
-		print(params)
 
 		g.conn.execute(text(update_query), params)
 		g.conn.commit()
