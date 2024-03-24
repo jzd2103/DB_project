@@ -38,6 +38,7 @@
                                 <p class="me-3 fw-bold">{{ post.username }}</p>
                                 <p>{{ post.caption }}</p>
                             </div>
+                            <a class="btn btn-outline-info" href="/EditPost?post_id={{ post.post_id }}">Update Post</a>
                         </div>
                     {% endfor %}
                 </div>
@@ -80,6 +81,7 @@
                                     {% endfor %}
                                 </ol>
                             </div>
+                            <a class="btn btn-outline-info" href="/EditRecipe">Edit Recipe</a>
                         </div>
                     {% endfor %}
                 </div>

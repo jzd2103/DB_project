@@ -91,7 +91,7 @@ def profile():
 		flash('You are not logged in', 'danger')
 		return redirect('/')
 	
-	post_query = f"""Select username, caption, image_URL, video_URL
+	post_query = f"""Select username, post_id, caption, image_URL, video_URL
 					From Posts Natural Join Make Natural Join Users
 					Where User_ID = {user_id}
 					Order by Date_Posted DESC
@@ -107,8 +107,8 @@ def profile():
 	posts, recipes, users = [], [], []
 	cursor = g.conn.execute(text(post_query))
 
-	for username, caption, image_url, video_url in cursor:
-		posts.append({'username': username, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
+	for username, post_id, caption, image_url, video_url in cursor:
+		posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
 
 	cursor = g.conn.execute(text(recipe_query))	
 
@@ -173,9 +173,66 @@ def edit_profile():
 		g.conn.commit()
 
 		flash("Your profile has been updated successfully", 'success')
-		return redirect('/')
+		return redirect('/Profile')
 
 	return render_template('update_profile.html', logged_in=logged_in)
+
+@app.route('/EditPost', methods=['POST', 'GET'])
+def edit_post():
+	global logged_in
+	global user_id
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+	
+	if request.method == 'POST':
+		post_id = request.form['post_id']
+		if post_id:
+			print(post_id)
+		else:
+			print("none")
+		caption = request.form['caption']
+		video_file = request.files.get('video_file')
+		image_file = request.files.get('image_file')
+		
+		if video_file.filename != '' and image_file.filename != '':
+			flash("Upload only one media file", 'danger')
+			return redirect(f'/EditPost?post_id={{post_id}}')
+		
+		current_time = datetime.now()
+		formatted_time = current_time.strftime("%y/%m/%d")
+
+		params = {}
+		
+		update_query = "Update Posts Set "
+
+		if caption != '':
+			update_query += "Caption = (:caption), "
+			params['caption'] = caption
+		if video_file.filename != '':
+			file_path = save_video(video_file)
+			update_query += "Video_URL = (:video_file), "
+			params['video_file'] = file_path
+		elif image_file.filename != '':
+			file_path = save_image(image_file)
+			update_query += "Image_URL = (:image_file), "
+			params['image_file'] = file_path
+
+		update_query = update_query.rstrip(', ')
+		update_query += " Where Post_ID = (:post_id)"
+		params['post_id'] = post_id
+
+		print(update_query)
+		print(params)
+
+		g.conn.execute(text(update_query), params)
+		g.conn.commit()
+
+		flash("Your post has been updated successfully", 'success')
+		return redirect('/Profile')
+
+	return render_template('edit_post.html', logged_in=logged_in)
 
 @app.route('/Create')
 def create():
