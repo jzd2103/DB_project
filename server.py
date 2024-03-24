@@ -97,7 +97,7 @@ def profile():
 					Order by Date_Posted DESC
 					"""
 	
-	recipe_query = f"""Select Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
+	recipe_query = f"""Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
 					  from Recipes natural join Users natural join Create_recipe
 					  Where User_ID = {user_id}"""
 
@@ -112,8 +112,8 @@ def profile():
 
 	cursor = g.conn.execute(text(recipe_query))	
 
-	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
-		recipes.append({'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
+	for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
+		recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
 				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
 	
 	cursor = g.conn.execute(text(user_query))
@@ -240,6 +240,65 @@ def edit_post():
 		return redirect('/Profile')
 
 	return render_template('edit_post.html', logged_in=logged_in)
+
+@app.route('/EditRecipe', methods=['GET', 'POST'])
+def edit_recipe():
+	global logged_in
+	global user_id
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+	
+	if request.method == 'POST':
+		recipe_id = request.form['recipe_id']
+		recipe_name = request.form['recipe_name']
+		description = request.form['description']
+		ingredients = request.form['ingredients']
+		directions = request.form['directions']
+		cook_time = request.form['cook_time']
+		image_file = request.files.get('image_file')
+		
+		if not recipe_name and not description and not ingredients and not directions and not cook_time and not image_file:
+			flash("Nothing was entered", 'danger')
+			return redirect(f'/EditRecipe?recipe_id={recipe_id}')
+
+		params = {}
+		
+		update_query = "Update Recipes Set "
+
+		if recipe_name:
+			update_query += "Recipe_Name = (:recipe_name), "
+			params['recipe_name'] = recipe_name
+		if description:
+			update_query += "Description = (:description), "
+			params['description'] = description
+		if ingredients:
+			update_query += "Ingredients = (:ingredients), "
+			params['ingredients'] = ingredients
+		if directions:
+			update_query += "Directions = (:directions), "
+			params['directions'] = directions
+		if cook_time:
+			cook_time = int(cook_time)
+			update_query += "Cook_Time = (:cook_time), "
+			params['cook_time'] = cook_time
+		if image_file is not None and image_file.filename != '':
+			file_path = save_image(image_file)
+			update_query += "Image_URL = (:image_file), "
+			params['image_file'] = file_path
+
+		update_query = update_query.rstrip(', ')
+		update_query += " Where Recipe_ID = (:recipe_id)"
+		params['recipe_id'] = recipe_id
+
+		g.conn.execute(text(update_query), params)
+		g.conn.commit()
+
+		flash("Your recipe has been updated successfully", 'success')
+		return redirect('/Profile')
+
+	return render_template('edit_recipe.html', logged_in=logged_in)
 
 @app.route('/Create')
 def create():
