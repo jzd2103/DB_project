@@ -12,7 +12,7 @@
                 {% endif %}
                 <p><strong>Address:</strong> {{ users[0].address}}</p>
                 <p><strong>Date of Birth:</strong> {{ users[0].date_of_birth}}</p>
-                <a class="btn btn-outline-info" href="/EditProfile">Update Profile</a>
+                <a class="btn btn-outline-info" href="/UpdateProfile">Update Profile</a>
             </div>
         </div>
     </div>
@@ -38,7 +38,7 @@
                                 <p class="me-3 fw-bold">{{ post.username }}</p>
                                 <p>{{ post.caption }}</p>
                             </div>
-                            <a class="btn btn-outline-info" href="/EditPost?post_id={{ post.post_id }}">Update Post</a>
+                            <a class="btn btn-outline-info" href="/UpdatePost?post_id={{ post.post_id }}">Update Post</a>
                             <a class="btn btn-outline-info mt-2" href="/AddTag?recipe_id=&post_id={{ post.post_id }}">Add Tag</a>
                         </div>
                     {% endfor %}
@@ -82,7 +82,7 @@
                                     {% endfor %}
                                 </ol>
                             </div>
-                            <a class="btn btn-outline-info" href="/EditRecipe?recipe_id={{ recipe.recipe_id }}">Edit Recipe</a>
+                            <a class="btn btn-outline-info" href="/UpdateRecipe?recipe_id={{ recipe.recipe_id }}">Update Recipe</a>
                             <a class="btn btn-outline-info mt-2" href="/AddTag?recipe_id={{ recipe.recipe_id }}&post_id=">Add Tag</a>
                         </div>
                     {% endfor %}

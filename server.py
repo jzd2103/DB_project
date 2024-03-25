@@ -136,8 +136,8 @@ def profile():
 
 	return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes)
 
-@app.route('/EditProfile', methods=['POST', 'GET'])
-def edit_profile():
+@app.route('/UpdateProfile', methods=['POST', 'GET'])
+def update_profile():
 	global logged_in
 	global user_id
 
@@ -155,7 +155,7 @@ def edit_profile():
 
 		if not name and not address and not bio and not dob and not username and not password:
 			flash("Nothing was entered", 'danger')
-			return redirect('/EditProfile')
+			return redirect('/UpdateProfile')
 
 		params = {}
 		
@@ -262,41 +262,57 @@ def add_tag():
 		tag = request.form['tag']
 
 		if not tag:
-			flash("Nothing was entered", 'danger')
-			return redirect(f'/AddTag?post_id={post_id}')
+			if post_id:
+				flash("Nothing was entered", 'danger')
+				return redirect(f'/AddTag?post_id={post_id}')
+			else:
+				flash("Nothing was entered", 'danger')
+				return redirect(f'/AddTag?recipe_id={recipe_id}')
 
 		param = {'tag': tag}
 		select_query = """Select Tag_ID from Tags Where Tag_Name = (:tag)"""
 		tag_exists = g.conn.execute(text(select_query), param).fetchone()
-
+		
 		if tag_exists:
-			tag_id = tag_exists[0]
-			
-			if post_id:
-				params = {'post_id': post_id, 'tag_id': tag_id}
-				insertion_query = """INSERT INTO Have_Post_Tag (Post_ID, Tag_ID)
-							         VALUES (:post_id, :tag_id)"""
-			elif recipe_id:
-				params = {'recipe_id': recipe_id, 'tag_id': tag_id}
-				insertion_query = """INSERT INTO Have_Recipe_Tag (Recipe_ID, Tag_ID)
-							         VALUES (:recipe_id, :tag_id)"""
+			param = {'tag': tag}
+			select_exists_query = """Select * from Tags Where Tag_Name = (:tag)"""
+			tag_already_exists = g.conn.execute(text(select_query), param).fetchone()
 
-			g.conn.execute(text(insertion_query), params)
-			g.conn.commit()
+			if tag_already_exists:
+				if post_id:
+					flash('This' + ' post ' + 'already has that tag', 'danger')
+					return redirect(f'/AddTag?post_id={post_id}')
+				else:
+					flash('This' + ' recipe ' + 'already has that tag', 'danger')
+					return redirect(f'/AddTag?recipe_id={recipe_id}')
+			else:
+				tag_id = tag_exists[0]
+				
+				if post_id:
+					params = {'post_id': post_id, 'tag_id': tag_id}
+					insertion_query = """INSERT INTO Have_Post_Tag (Post_ID, Tag_ID)
+										VALUES (:post_id, :tag_id)"""
+				elif recipe_id:
+					params = {'recipe_id': recipe_id, 'tag_id': tag_id}
+					insertion_query = """INSERT INTO Have_Recipe_Tag (Recipe_ID, Tag_ID)
+										VALUES (:recipe_id, :tag_id)"""
 
-			if post_id:
-				flash('Tag added successfully to post', 'success')
-			elif recipe_id:
-				flash('Tag added successfully to Recipe', 'success')
-			return redirect('/Profile')
+				g.conn.execute(text(insertion_query), params)
+				g.conn.commit()
+
+				if post_id:
+					flash('Tag added successfully to post', 'success')
+				elif recipe_id:
+					flash('Tag added successfully to Recipe', 'success')
+				return redirect('/Profile')
 		else:
 			flash("The tag name entered doesn't exist yet. Create a new tag", 'danger')
 			return redirect('/Create')
 
 	return render_template('AddTag.html', logged_in = logged_in)
 
-@app.route('/EditPost', methods=['POST', 'GET'])
-def edit_post():
+@app.route('/UpdatePost', methods=['POST', 'GET'])
+def update_post():
 	global logged_in
 	global user_id
 
@@ -312,10 +328,10 @@ def edit_post():
 		
 		if not caption and not video_file and not image_file:
 			flash("Nothing was entered", 'danger')
-			return redirect(f'/EditPost?post_id={post_id}')
+			return redirect(f'/UpdatePost?post_id={post_id}')
 		elif video_file.filename != '' and image_file.filename != '':
 			flash("Upload only one media file", 'danger')
-			return redirect(f'/EditPost?post_id={post_id}')
+			return redirect(f'/UpdatePost?post_id={post_id}')
 		
 		current_time = datetime.now()
 		formatted_time = current_time.strftime("%Y-%m-%d")
@@ -349,10 +365,10 @@ def edit_post():
 		flash("Your post has been updated successfully", 'success')
 		return redirect('/Profile')
 
-	return render_template('edit_post.html', logged_in=logged_in)
+	return render_template('update_post.html', logged_in=logged_in)
 
-@app.route('/EditRecipe', methods=['GET', 'POST'])
-def edit_recipe():
+@app.route('/UpdateRecipe', methods=['GET', 'POST'])
+def update_recipe():
 	global logged_in
 	global user_id
 
@@ -371,7 +387,7 @@ def edit_recipe():
 		
 		if not recipe_name and not description and not ingredients and not directions and not cook_time and not image_file:
 			flash("Nothing was entered", 'danger')
-			return redirect(f'/EditRecipe?recipe_id={recipe_id}')
+			return redirect(f'/UpdateRecipe?recipe_id={recipe_id}')
 
 		params = {}
 		
@@ -408,7 +424,7 @@ def edit_recipe():
 		flash("Your recipe has been updated successfully", 'success')
 		return redirect('/Profile')
 
-	return render_template('edit_recipe.html', logged_in=logged_in)
+	return render_template('update_recipe.html', logged_in=logged_in)
 
 @app.route('/Create')
 def create():

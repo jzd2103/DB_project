@@ -4,12 +4,12 @@
 <div class="container-fluid mt-4">
     <div class = "row justify-content-center">
         <div class="col-7 light-background light-border p-3">
-            <form method="POST" action="/EditPost" enctype="multipart/form-data">
+            <form method="POST" action="/UpdatePost" enctype="multipart/form-data">
                 
                 <input type="hidden" name="post_id" value="{{ request.args.get('post_id')}}">
 
                 <fieldset class="form-group">
-                    <legend class="border-bottom mb-4">Edit Post</legend>
+                    <legend class="border-bottom mb-4">Update Post</legend>
 
                     <label for="Caption" class="form-label">Caption:</label><br>
                     <textarea type="text" id="Name" name="caption" class="form-control"></textarea><br>
