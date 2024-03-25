@@ -29,20 +29,16 @@
                         <a class="btn btn-outline-info btn-block w-100" href="/rate?post_id={{ post.post_id }}&rating=-1">Yuck</a>
                     </div>
                     <div class = "col-11 m-3 p-3 comments ">
-                        <h6 class="text-center">Comments</h3>
+                        <h6 class="text-center">Comments</h6>
                         {% if post.comments %}
-                            {% set all_none = True %}
                             {% for comment in post.comments %}
-                                {% if comment %}
-                                    {% set all_none = False %}
-                                    <p>{{ comment }}</p>
+                                {% if comment.comment %}
+                                    <div class="d-flex mt-1">
+                                        <p class="me-3"><strong>{{ comment.username }}</strong></p>
+                                        <p>{{ comment.comment }}</p>
+                                    </div>
                                 {% endif %}
                             {% endfor %}
-                            {% if all_none %}
-                                <p>No comments available</p>
-                            {% endif %}
-                        {% else %}
-                            <p>No comments available</p>
                         {% endif %}
                     </div>
                 </div>
