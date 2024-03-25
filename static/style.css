@@ -38,4 +38,6 @@ div h1{
 .comments{
     border: 1px solid pink;
     border-radius: 25px;
+    max-height: 200px;
+    overflow-y: auto;
 }

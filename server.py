@@ -192,13 +192,39 @@ def edit_profile():
 
 	return render_template('update_profile.html', logged_in=logged_in)
 
-@app.route('/rate', methods=['GET'])
+@app.route('/rate', methods=['GET', 'POST'])
 def rate():
 	global logged_in
 	global user_id
 
 	if(not logged_in):
 		flash('You are not logged in', 'danger')
+		return redirect('/')
+	
+	if request.method == 'POST':
+		post_id = request.form['post_id']
+		comment = request.form['comment']
+
+		if not comment:
+			flash("No comment entered")
+			return redirect('/')
+		
+		params = {'post_id': post_id, 'comment': comment, 'user_id': user_id}
+
+		check_query = """Select * from Rate where user_id = (:user_id) and post_id = (:post_id)"""
+		exists_rate = g.conn.execute(text(check_query), params).fetchone()
+
+		if exists_rate:
+			set_comment = """Update Rate Set Comment = (:comment) Where user_id = (:user_id) AND post_id = (:post_id)"""
+			g.conn.execute(text(set_comment), params)
+			flash('Rate updated', 'success')
+		else:
+			insertion_query = """INSERT INTO Rate (User_ID, Post_ID, Comment)
+							     VALUES (:user_id, :post_id, :comment)"""
+			g.conn.execute(text(insertion_query), params)
+			flash('Rating added successfully', 'success')
+
+		g.conn.commit()
 		return redirect('/')
 	
 	post_id = request.args.get('post_id')
@@ -221,6 +247,53 @@ def rate():
 		
 	g.conn.commit()
 	return redirect('/')
+
+@app.route('/AddTag', methods=['POST', 'GET'])
+def add_tag():
+	global logged_in
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+	
+	if request.method == 'POST':
+		post_id = request.form.get('post_id', None)
+		recipe_id = request.form.get('recipe_id', None)
+		tag = request.form['tag']
+
+		if not tag:
+			flash("Nothing was entered", 'danger')
+			return redirect(f'/AddTag?post_id={post_id}')
+
+		param = {'tag': tag}
+		select_query = """Select Tag_ID from Tags Where Tag_Name = (:tag)"""
+		tag_exists = g.conn.execute(text(select_query), param).fetchone()
+
+		if tag_exists:
+			tag_id = tag_exists[0]
+			
+			if post_id:
+				params = {'post_id': post_id, 'tag_id': tag_id}
+				insertion_query = """INSERT INTO Have_Post_Tag (Post_ID, Tag_ID)
+							         VALUES (:post_id, :tag_id)"""
+			elif recipe_id:
+				params = {'recipe_id': recipe_id, 'tag_id': tag_id}
+				insertion_query = """INSERT INTO Have_Recipe_Tag (Recipe_ID, Tag_ID)
+							         VALUES (:recipe_id, :tag_id)"""
+
+			g.conn.execute(text(insertion_query), params)
+			g.conn.commit()
+
+			if post_id:
+				flash('Tag added successfully to post', 'success')
+			elif recipe_id:
+				flash('Tag added successfully to Recipe', 'success')
+			return redirect('/Profile')
+		else:
+			flash("The tag name entered doesn't exist yet. Create a new tag", 'danger')
+			return redirect('/Create')
+
+	return render_template('AddTag.html', logged_in = logged_in)
 
 @app.route('/EditPost', methods=['POST', 'GET'])
 def edit_post():
