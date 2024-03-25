@@ -39,7 +39,7 @@
                                 <p>{{ post.caption }}</p>
                             </div>
                             <a class="btn btn-outline-info" href="/UpdatePost?post_id={{ post.post_id }}">Update Post</a>
-                            <a class="btn btn-outline-info mt-2" href="/AddTag?recipe_id=&post_id={{ post.post_id }}">Add Tag</a>
+                            <a class="btn btn-outline-info mt-2" href="/AddTag?post_id={{ post.post_id }}">Add Tag</a>
                         </div>
                     {% endfor %}
                 </div>
@@ -83,7 +83,7 @@
                                 </ol>
                             </div>
                             <a class="btn btn-outline-info" href="/UpdateRecipe?recipe_id={{ recipe.recipe_id }}">Update Recipe</a>
-                            <a class="btn btn-outline-info mt-2" href="/AddTag?recipe_id={{ recipe.recipe_id }}&post_id=">Add Tag</a>
+                            <a class="btn btn-outline-info mt-2" href="/AddTag?recipe_id={{ recipe.recipe_id }}">Add Tag</a>
                         </div>
                     {% endfor %}
                 </div>

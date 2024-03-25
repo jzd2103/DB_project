@@ -69,7 +69,25 @@ def home():
 
 		comment_cursor.close()
 
-		posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url, 'comments': comments})
+		rating_query = """select post_id, rating
+						  from posts natural join rate
+						  where post_id = (:post_id) and rating != 0"""
+		
+		rating_cursor = g.conn.execute(text(rating_query), {'post_id': post_id})
+
+		yum = 0
+		yuck = 0
+
+		for post_id, rating in rating_cursor:
+			if rating == 1:
+				yum += 1
+			elif rating == -1:
+				yuck += 1
+
+		rating_cursor.close()
+
+		posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url, 'comments': comments, 
+				'yum': yum, 'yuck': yuck})
 
 	cursor.close()
 
