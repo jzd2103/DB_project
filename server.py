@@ -59,13 +59,13 @@ def home():
 
 	for username, post_id, caption, image_url, video_url in cursor:
 		comments = []
-		comment_query = """Select Username, Comment 
+		comment_query = """Select Username as username1, Comment
 						   From Rate Natural Join Users
 						   Where post_id = (:post_id)"""
 		comment_cursor = g.conn.execute(text(comment_query), {'post_id': post_id})
 
-		for username, comment in comment_cursor:
-			comments.append({'username': username, 'comment': comment})
+		for username1, comment in comment_cursor:
+			comments.append({'username': username1, 'comment': comment})
 
 		comment_cursor.close()
 

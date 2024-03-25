@@ -31,14 +31,27 @@
                     <div class = "col-11 m-3 p-3 comments ">
                         <h6 class="text-center">Comments</h6>
                         {% if post.comments %}
-                            {% for comment in post.comments %}
-                                {% if comment.comment %}
-                                    <div class="d-flex mt-1">
-                                        <p class="me-3"><strong>{{ comment.username }}</strong></p>
-                                        <p>{{ comment.comment }}</p>
-                                    </div>
+                            {% set ns = namespace(allNone=true) %}
+                            {% for c in post.comments %}
+                                {% if c.comment %}
+                                    {% set ns.allNone = false %}
                                 {% endif %}
                             {% endfor %}
+
+                            {% if not ns.allNone %}
+                                {% for c in post.comments %}
+                                    {% if c.comment %}
+                                        <div class="d-flex mt-1">
+                                            <p class="me-3"><strong>{{ c.username }}</strong></p>
+                                            <p>{{ c.comment }}</p>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <p>No comments yet</p>
+                            {% endif %}
+                        {% else %}
+                            <p>No comments yet</p>
                         {% endif %}
                     </div>
                 </div>
