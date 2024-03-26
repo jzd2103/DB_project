@@ -91,8 +91,18 @@ def home():
 
 	cursor.close()
 
+	if user_id:
+		params = {'user_id': user_id}
+		username_query = """Select Username
+							From Users
+							Where User_ID = (:user_id)"""
+		
+		loggedin_user = g.conn.execute(text(username_query), params).fetchone()[0]
+	else:
+		loggedin_user = None
+	
 	global logged_in
-	return render_template("feed.html", posts=posts, logged_in=logged_in)
+	return render_template("feed.html", posts=posts, logged_in=logged_in, loggedin_user=loggedin_user)
 
 @app.route('/Recipes')
 def recipes():
@@ -119,40 +129,85 @@ def profile():
 	if(not logged_in):
 		flash('You are not logged in', 'danger')
 		return redirect('/')
-	
+
 	post_query = f"""Select username, post_id, caption, image_URL, video_URL
-					From Posts Natural Join Make Natural Join Users
-					Where User_ID = {user_id}
-					Order by Date_Posted DESC
-					"""
-	
+							From Posts Natural Join Make Natural Join Users
+							Where User_ID = {user_id}
+							Order by Date_Posted DESC
+							"""
+			
 	recipe_query = f"""Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
-					  from Recipes natural join Users natural join Create_recipe
-					  Where User_ID = {user_id}"""
+							from Recipes natural join Users natural join Create_recipe
+							Where User_ID = {user_id}"""
 
 	user_query = f"""Select Name, Address, Biography, Date_of_Birth, Username
-					 From Users Where User_ID = {user_id}"""
-	
-	posts, recipes, users = [], [], []
-	cursor = g.conn.execute(text(post_query))
+							From Users Where User_ID = {user_id}"""
 
-	for username, post_id, caption, image_url, video_url in cursor:
-		posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
+	if(request.args.get('username')):
+		username_viewing = request.args.get('username')
 
-	cursor = g.conn.execute(text(recipe_query))	
+		query = f"""Select User_ID
+					From Users
+					Where Username = '{username_viewing}'"""
+		user_id_viewing = g.conn.execute(text(query)).fetchone()[0]
 
-	for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
-		recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
-				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
-	
-	cursor = g.conn.execute(text(user_query))
+		if user_id != user_id_viewing:
+			post_query = f"""Select username, post_id, caption, image_URL, video_URL
+							From Posts Natural Join Make Natural Join Users
+							Where User_ID = {user_id_viewing}
+							Order by Date_Posted DESC
+							"""
+			
+			recipe_query = f"""Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
+							from Recipes natural join Users natural join Create_recipe
+							Where User_ID = {user_id_viewing}"""
 
-	for Name, Address, Biography, Date_of_Birth, Username in cursor:
-		users.append({'name': Name, 'address': Address, 'biography': Biography, 'date_of_birth': Date_of_Birth, 'username': Username})
-	
-	cursor.close()
+			user_query = f"""Select Name, Address, Biography, Date_of_Birth, Username
+							From Users Where User_ID = {user_id_viewing}"""
+		
+			posts, recipes, users = [], [], []
+			cursor = g.conn.execute(text(post_query))
 
-	return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes)
+			for username, post_id, caption, image_url, video_url in cursor:
+				posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
+
+			cursor = g.conn.execute(text(recipe_query))	
+
+			for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
+				recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
+								'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
+			
+			cursor = g.conn.execute(text(user_query))
+
+			for Name, Address, Biography, Date_of_Birth, Username in cursor:
+				users.append({'name': Name, 'address': Address, 'biography': Biography, 'date_of_birth': Date_of_Birth, 'username': Username})
+			
+			cursor.close()
+
+			return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes, username_viewing=username_viewing)
+		else:
+			return redirect('/Profile')
+	else:
+		posts, recipes, users = [], [], []
+		cursor = g.conn.execute(text(post_query))
+
+		for username, post_id, caption, image_url, video_url in cursor:
+			posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
+
+		cursor = g.conn.execute(text(recipe_query))	
+
+		for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
+			recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
+							'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
+		
+		cursor = g.conn.execute(text(user_query))
+
+		for Name, Address, Biography, Date_of_Birth, Username in cursor:
+			users.append({'name': Name, 'address': Address, 'biography': Biography, 'date_of_birth': Date_of_Birth, 'username': Username})
+		
+		cursor.close()
+
+		return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes)
 
 @app.route('/UpdateProfile', methods=['POST', 'GET'])
 def update_profile():
@@ -327,6 +382,30 @@ def add_tag():
 			flash("The tag name entered doesn't exist yet. Create a new tag", 'danger')
 			return redirect('/Create')
 
+	post_id = request.args.get('post_id', None)
+	recipe_id = request.args.get('recipe_id', None)
+	if post_id:
+		params = {'post_id': post_id}
+		user_id_query = """Select User_ID
+					   	   From Posts Natural Join Make
+					   	   Where Post_ID = (:post_id)"""
+		add_tag_user_id = g.conn.execute(text(user_id_query), params).fetchone()[0]
+		if user_id != add_tag_user_id:
+			flash('You cannot add a tag to a' + ' post ' + 'that is not yours', 'danger')
+			return redirect('/')
+	elif recipe_id:
+		params = {'recipe_id': recipe_id}
+		user_id_query = """Select User_ID
+		 			   	   From Recipes Natural Join Create_Recipe
+					   	   Where Recipe_ID = (:recipe_id)"""
+		add_tag_user_id = g.conn.execute(text(user_id_query), params).fetchone()[0]
+		if user_id != add_tag_user_id:
+			flash('You cannot add a tag to a' + ' recipe ' + 'that is not yours', 'danger')
+			return redirect('/')
+	elif post_id == '' or recipe_id == '':
+		flash('Error: no post or recipe to add tag to')
+		return redirect('/')
+	
 	return render_template('AddTag.html', logged_in = logged_in)
 
 @app.route('/UpdatePost', methods=['POST', 'GET'])
@@ -383,6 +462,21 @@ def update_post():
 		flash("Your post has been updated successfully", 'success')
 		return redirect('/Profile')
 
+	post_id = request.args.get('post_id', None)
+	if post_id:
+		params = {'post_id': post_id}
+		post_user_query = """Select User_ID
+							 From Posts Natural Join Make
+							 Where Post_ID = (:post_id)"""
+		
+		update_post_user_id = g.conn.execute(text(post_user_query), params).fetchone()[0]
+		if user_id != update_post_user_id:
+			flash('You cannot update a post that is not yours', 'danger')
+			return redirect('/')
+	elif post_id == '':
+		flash('Error: no post to update')
+		return redirect('/')
+	
 	return render_template('update_post.html', logged_in=logged_in)
 
 @app.route('/UpdateRecipe', methods=['GET', 'POST'])
@@ -442,6 +536,21 @@ def update_recipe():
 		flash("Your recipe has been updated successfully", 'success')
 		return redirect('/Profile')
 
+	recipe_id = request.args.get('recipe_id', None)
+	if recipe_id:
+		params = {'recipe_id': recipe_id}
+		recipe_user_query = """Select User_ID
+							   From Recipes Natural Join Create_Recipe
+							   Where Recipe_ID = (:recipe_id)"""
+		
+		update_recipe_user_id = g.conn.execute(text(recipe_user_query), params).fetchone()[0]
+		if user_id != update_recipe_user_id:
+			flash('You cannot update a recipe that is not yours', 'danger')
+			return redirect('/')
+	elif recipe_id == '':
+		flash('Error: no recipe to update')
+		return redirect('/')
+	
 	return render_template('update_recipe.html', logged_in=logged_in)
 
 @app.route('/Create')

@@ -19,7 +19,11 @@
                         </video>
                     {% endif %}
                     <div class="d-flex mt-1">
-                        <p class="me-3 fw-bold">{{ post.username }}</p>
+                        {% if post.username != loggedin_user %}
+                            <a class="me-3 fw-bold" href="/Profile?username={{post.username}}">{{ post.username }}</a>
+                        {% else %}
+                            <a class="me-3 fw-bold" href="/Profile">{{ post.username }}</a>
+                        {% endif %}
                         <p>{{ post.caption }}</p>
                     </div>
                     <div class="col-6">

@@ -1,6 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
 
+<input type="hidden" name="username" value="{{ request.args.get('username')}}">
+
 <div class="container-fluid mt-4">
     <div class = "row justify-content-center">
         <div class="col-7 light-background light-border p-3">
@@ -12,7 +14,9 @@
                 {% endif %}
                 <p><strong>Address:</strong> {{ users[0].address}}</p>
                 <p><strong>Date of Birth:</strong> {{ users[0].date_of_birth}}</p>
-                <a class="btn btn-outline-info" href="/UpdateProfile">Update Profile</a>
+                {% if users[0].username != username_viewing %}
+                    <a class="btn btn-outline-info" href="/UpdateProfile">Update Profile</a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -38,8 +42,10 @@
                                 <p class="me-3 fw-bold">{{ post.username }}</p>
                                 <p>{{ post.caption }}</p>
                             </div>
-                            <a class="btn btn-outline-info" href="/UpdatePost?post_id={{ post.post_id }}">Update Post</a>
-                            <a class="btn btn-outline-info mt-2" href="/AddTag?post_id={{ post.post_id }}">Add Tag</a>
+                            {% if users[0].username != username_viewing %}
+                                <a class="btn btn-outline-info" href="/UpdatePost?post_id={{ post.post_id }}">Update Post</a>
+                                <a class="btn btn-outline-info mt-2" href="/AddTag?post_id={{ post.post_id }}">Add Tag</a>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 </div>
@@ -82,8 +88,10 @@
                                     {% endfor %}
                                 </ol>
                             </div>
-                            <a class="btn btn-outline-info" href="/UpdateRecipe?recipe_id={{ recipe.recipe_id }}">Update Recipe</a>
-                            <a class="btn btn-outline-info mt-2" href="/AddTag?recipe_id={{ recipe.recipe_id }}">Add Tag</a>
+                            {% if users[0].username != username_viewing %}
+                                <a class="btn btn-outline-info" href="/UpdateRecipe?recipe_id={{ recipe.recipe_id }}">Update Recipe</a>
+                                <a class="btn btn-outline-info mt-2" href="/AddTag?recipe_id={{ recipe.recipe_id }}">Add Tag</a>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 </div>
