@@ -19,6 +19,7 @@ engine = create_engine(DATABASEURI)
 
 logged_in = False
 user_id = None
+logged_in_username = None
 
 @app.before_request
 def before_request():
@@ -125,89 +126,126 @@ def recipes():
 def profile():
 	global logged_in
 	global user_id
+	global logged_in_username
 
 	if(not logged_in):
 		flash('You are not logged in', 'danger')
 		return redirect('/')
 
-	post_query = f"""Select username, post_id, caption, image_URL, video_URL
+	post_query = """Select username, post_id, caption, image_URL, video_URL
 							From Posts Natural Join Make Natural Join Users
-							Where User_ID = {user_id}
+							Where User_ID = (:user_id)
 							Order by Date_Posted DESC
 							"""
 			
-	recipe_query = f"""Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
+	recipe_query = """Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
 							from Recipes natural join Users natural join Create_recipe
-							Where User_ID = {user_id}"""
+							Where User_ID = (:user_id)"""
 
-	user_query = f"""Select Name, Address, Biography, Date_of_Birth, Username
-							From Users Where User_ID = {user_id}"""
+	user_query = """Select Name, Address, Biography, Date_of_Birth, Username
+							From Users Where User_ID = (:user_id)"""
 
 	if(request.args.get('username')):
 		username_viewing = request.args.get('username')
-
+		
+		params = {'username_viewing': username_viewing}
 		query = f"""Select User_ID
 					From Users
-					Where Username = '{username_viewing}'"""
-		user_id_viewing = g.conn.execute(text(query)).fetchone()[0]
+					Where Username = (:username_viewing)"""
+		user_id_viewing = g.conn.execute(text(query), params).fetchone()[0]
 
 		if user_id != user_id_viewing:
+			params = {'follower_id': user_id, 'followed_id': user_id_viewing}
+			
+			check_query = """Select * from Follow
+							Where Follower_ID = (:follower_id)
+							And Followed_ID = (:followed_id)"""
+
+			if(g.conn.execute(text(check_query), params).fetchone()):
+				is_following = True
+			else:
+				is_following = False
+			
+			params = params = {'user_id_viewing': user_id_viewing}
 			post_query = f"""Select username, post_id, caption, image_URL, video_URL
 							From Posts Natural Join Make Natural Join Users
-							Where User_ID = {user_id_viewing}
+							Where User_ID = (:user_id_viewing)
 							Order by Date_Posted DESC
 							"""
 			
 			recipe_query = f"""Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
 							from Recipes natural join Users natural join Create_recipe
-							Where User_ID = {user_id_viewing}"""
+							Where User_ID = (:user_id_viewing)"""
 
 			user_query = f"""Select Name, Address, Biography, Date_of_Birth, Username
-							From Users Where User_ID = {user_id_viewing}"""
+							From Users Where User_ID = (:user_id_viewing)"""
 		
 			posts, recipes, users = [], [], []
-			cursor = g.conn.execute(text(post_query))
+			cursor = g.conn.execute(text(post_query), params)
 
 			for username, post_id, caption, image_url, video_url in cursor:
 				posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
 
-			cursor = g.conn.execute(text(recipe_query))	
+			cursor = g.conn.execute(text(recipe_query), params)	
 
 			for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
 				recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
 								'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
 			
-			cursor = g.conn.execute(text(user_query))
+			cursor = g.conn.execute(text(user_query), params)
 
 			for Name, Address, Biography, Date_of_Birth, Username in cursor:
 				users.append({'name': Name, 'address': Address, 'biography': Biography, 'date_of_birth': Date_of_Birth, 'username': Username})
 			
 			cursor.close()
 
-			return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes, username_viewing=username_viewing)
+			following_query = f"""Select count(*)
+								From Follow
+								Where Follower_ID = (:user_id_viewing)"""
+			number_following = g.conn.execute(text(following_query), params).fetchone()[0]
+
+			followers_query = f"""Select count(*)
+								From Follow
+								Where Followed_ID = (:user_id_viewing)"""
+			number_followers = g.conn.execute(text(followers_query), params).fetchone()[0]
+
+			return render_template("profile.html", logged_in=logged_in, logged_in_username=logged_in_username, users=users, posts=posts, recipes=recipes, 
+						  username_viewing=username_viewing, is_following=is_following, number_followers=number_followers, number_following=number_following)
 		else:
 			return redirect('/Profile')
 	else:
 		posts, recipes, users = [], [], []
-		cursor = g.conn.execute(text(post_query))
+		params = {'user_id': user_id}
+		cursor = g.conn.execute(text(post_query), params)
 
 		for username, post_id, caption, image_url, video_url in cursor:
 			posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
 
-		cursor = g.conn.execute(text(recipe_query))	
+		cursor = g.conn.execute(text(recipe_query), params)	
 
 		for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
 			recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
 							'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
 		
-		cursor = g.conn.execute(text(user_query))
+		cursor = g.conn.execute(text(user_query), params)
 
 		for Name, Address, Biography, Date_of_Birth, Username in cursor:
 			users.append({'name': Name, 'address': Address, 'biography': Biography, 'date_of_birth': Date_of_Birth, 'username': Username})
 		
 		cursor.close()
 
-		return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes)
+		following_query = f"""Select count(*)
+							  From Follow
+							  Where Follower_ID = (:user_id)"""
+		number_following = g.conn.execute(text(following_query), params).fetchone()[0]
+
+		followers_query = f"""Select count(*)
+							  From Follow
+							  Where Followed_ID = (:user_id)"""
+		number_followers = g.conn.execute(text(followers_query), params).fetchone()[0]
+
+		return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes, logged_in_username=logged_in_username,
+						 username_viewing=logged_in_username, number_followers=number_followers, number_following=number_following)
 
 @app.route('/UpdateProfile', methods=['POST', 'GET'])
 def update_profile():
@@ -288,7 +326,7 @@ def follow():
 	follow_exists = g.conn.execute(text(check_query), params).fetchone()
 
 	if follow_exists:
-		flash('You already follow this user', 'danger')
+		flash(f'You already follow this user {followed_username}', 'danger')
 		return redirect(f'/Profile?username={followed_username}')
 	else:
 		insertion_query = """INSERT INTO Follow (Follower_ID, Followed_ID)
@@ -298,7 +336,7 @@ def follow():
 		g.conn.commit()
 
 		flash('Follow successful', 'success')
-		return redirect('/')
+		return redirect(f'/Profile?username={followed_username}')
 
 @app.route('/Unfollow', methods=['POST'])
 def unfollow():
@@ -333,7 +371,7 @@ def unfollow():
 		g.conn.commit()
 
 		flash('Unfollow successful', 'success')
-		return redirect('/')
+		return redirect(f'/Profile?username={followed_username}')
 
 
 @app.route('/rate', methods=['GET', 'POST'])
@@ -743,6 +781,7 @@ def create_post():
 def login():
 	global logged_in
 	global user_id
+	global logged_in_username
 
 	if(logged_in):
 		flash('You are already logged in', 'danger')
@@ -764,6 +803,7 @@ def login():
 		if user:
 			logged_in = True
 			user_id = user[0]
+			logged_in_username = uname_input
 
 			flash('Login successful', 'success')
 			return redirect('/')
