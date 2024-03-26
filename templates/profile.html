@@ -9,6 +9,16 @@
             <h1 class="text-center">{{ users[0].username }}'s Profile</h1>
             <div>
                 <p><strong>Name:</strong> {{ users[0].name}}</p>
+                {% if users[0].username == username_viewing %}
+                    <form method="POST" action="/Follow">
+                        <input type="hidden" name="followed_username" value="{{ username_viewing }}">
+                        <input type="submit" value="Follow" class = "btn btn-outline-info">
+                    </form>
+                    <form method="POST" action="/Unfollow">
+                        <input type="hidden" name="followed_username" value="{{ username_viewing }}">
+                        <input type="submit" value="Unfollow" class = "btn btn-outline-info">
+                    </form>
+                {% endif %}
                 {% if users[0].biography != '' %}
                     <p><strong>Biography:</strong> {{ users[0].biography }}</p>
                 {% endif %}

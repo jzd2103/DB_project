@@ -114,7 +114,7 @@ def recipes():
 
 	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
 		recipes.append({'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
-				        'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
+						'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
 
 	cursor.close()
 
@@ -265,6 +265,77 @@ def update_profile():
 
 	return render_template('update_profile.html', logged_in=logged_in)
 
+@app.route('/Follow', methods=['POST'])
+def follow():
+	global user_id
+	global logged_in
+	
+	followed_username = request.form.get('followed_username')
+
+	params = {'followed_username': followed_username}
+	get_query = """Select User_ID
+				   From Users
+				   Where Username = (:followed_username)"""
+	
+	get_follow_id = g.conn.execute(text(get_query), params).fetchone()[0]
+
+	params = {'follower_id': user_id, 'followed_id': get_follow_id}
+	
+	check_query = """Select * from Follow
+					 Where Follower_ID = (:follower_id)
+					 And Followed_ID = (:followed_id)"""
+
+	follow_exists = g.conn.execute(text(check_query), params).fetchone()
+
+	if follow_exists:
+		flash('You already follow this user', 'danger')
+		return redirect(f'/Profile?username={followed_username}')
+	else:
+		insertion_query = """INSERT INTO Follow (Follower_ID, Followed_ID)
+							VALUES (:follower_id, :followed_id)"""
+		
+		g.conn.execute(text(insertion_query), params)
+		g.conn.commit()
+
+		flash('Follow successful', 'success')
+		return redirect('/')
+
+@app.route('/Unfollow', methods=['POST'])
+def unfollow():
+	global user_id
+	global logged_in
+
+	followed_username = request.form.get('followed_username')
+
+	params = {'followed_username': followed_username}
+	get_query = """Select User_ID
+				   From Users
+				   Where Username = (:followed_username)"""
+	
+	get_follow_id = g.conn.execute(text(get_query), params).fetchone()[0]
+
+	params = {'follower_id': user_id, 'followed_id': get_follow_id}
+	
+	check_query = """Select * from Follow
+					 Where Follower_ID = (:follower_id)
+					 And Followed_ID = (:followed_id)"""
+
+	follow_exists = g.conn.execute(text(check_query), params).fetchone()
+
+	if not follow_exists:
+		flash('You do not follow this user', 'danger')
+		return redirect(f'/Profile?username={followed_username}')
+	else:
+		deletion_query = """DELETE FROM Follow
+							WHERE Follower_ID = (:follower_id) AND Followed_ID = (:followed_id)"""
+		
+		g.conn.execute(text(deletion_query), params)
+		g.conn.commit()
+
+		flash('Unfollow successful', 'success')
+		return redirect('/')
+
+
 @app.route('/rate', methods=['GET', 'POST'])
 def rate():
 	global logged_in
@@ -293,7 +364,7 @@ def rate():
 			flash('Rate updated', 'success')
 		else:
 			insertion_query = """INSERT INTO Rate (User_ID, Post_ID, Comment)
-							     VALUES (:user_id, :post_id, :comment)"""
+								 VALUES (:user_id, :post_id, :comment)"""
 			g.conn.execute(text(insertion_query), params)
 			flash('Rating added successfully', 'success')
 
@@ -387,8 +458,8 @@ def add_tag():
 	if post_id:
 		params = {'post_id': post_id}
 		user_id_query = """Select User_ID
-					   	   From Posts Natural Join Make
-					   	   Where Post_ID = (:post_id)"""
+							  From Posts Natural Join Make
+							  Where Post_ID = (:post_id)"""
 		add_tag_user_id = g.conn.execute(text(user_id_query), params).fetchone()[0]
 		if user_id != add_tag_user_id:
 			flash('You cannot add a tag to a' + ' post ' + 'that is not yours', 'danger')
@@ -396,8 +467,8 @@ def add_tag():
 	elif recipe_id:
 		params = {'recipe_id': recipe_id}
 		user_id_query = """Select User_ID
-		 			   	   From Recipes Natural Join Create_Recipe
-					   	   Where Recipe_ID = (:recipe_id)"""
+							   From Recipes Natural Join Create_Recipe
+							  Where Recipe_ID = (:recipe_id)"""
 		add_tag_user_id = g.conn.execute(text(user_id_query), params).fetchone()[0]
 		if user_id != add_tag_user_id:
 			flash('You cannot add a tag to a' + ' recipe ' + 'that is not yours', 'danger')
@@ -603,7 +674,7 @@ def create_recipe():
 		file_path = save_image(image_file)
 	
 	params1 = {'recipe_name': recipe_name, 'description': description, 'ingredients': ingredients, 
-		   	  'directions': directions, 'cook_time': cook_time, 'media_file': file_path}
+				 'directions': directions, 'cook_time': cook_time, 'media_file': file_path}
 	
 	insertion_query = """INSERT INTO Recipes (Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_Url)
 						 VALUES (:recipe_name, :description, :ingredients, :directions, :cook_time, :media_file)
@@ -687,8 +758,8 @@ def login():
 
 		params = {"username": uname_input, "password": pword_input}
 		user = g.conn.execute(text("""SELECT User_ID 
-							 		  FROM Users 
-							 		  WHERE Username = (:username) AND Password = (:password)"""), params).fetchone()
+									   FROM Users 
+									   WHERE Username = (:username) AND Password = (:password)"""), params).fetchone()
 		
 		if user:
 			logged_in = True
@@ -758,40 +829,40 @@ def make_tag():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    global logged_in
-    if request.method == 'POST':
-        name = request.form.get('name')
-        address = request.form.get('address', '')
-        bio = request.form.get('bio', '')
-        dob = request.form.get('dob')
-        username = request.form.get('username')
-        password = request.form.get('password')
+	global logged_in
+	if request.method == 'POST':
+		name = request.form.get('name')
+		address = request.form.get('address', '')
+		bio = request.form.get('bio', '')
+		dob = request.form.get('dob')
+		username = request.form.get('username')
+		password = request.form.get('password')
 
-        if not name or not dob or not username or not password:
-            flash('* fields are required', 'danger')
-            return redirect('/register')
+		if not name or not dob or not username or not password:
+			flash('* fields are required', 'danger')
+			return redirect('/register')
 
-        params = {
-            "new_name": name,
-            "new_add": address,
-            "new_bio": bio,
-            "new_dob": dob,
-            "new_username": username,
-            "new_password": password
-        }
+		params = {
+			"new_name": name,
+			"new_add": address,
+			"new_bio": bio,
+			"new_dob": dob,
+			"new_username": username,
+			"new_password": password
+		}
 
-        insertion_query = """
-            INSERT INTO Users (Name, Address, Biography, Date_of_Birth, Username, Password)
-            VALUES (:new_name, :new_add, :new_bio, :new_dob, :new_username, :new_password)
-        """
+		insertion_query = """
+			INSERT INTO Users (Name, Address, Biography, Date_of_Birth, Username, Password)
+			VALUES (:new_name, :new_add, :new_bio, :new_dob, :new_username, :new_password)
+		"""
 
-        g.conn.execute(text(insertion_query), params)
-        g.conn.commit()
+		g.conn.execute(text(insertion_query), params)
+		g.conn.commit()
 
-        flash(f"Account created successfully for {name}!", 'success')
-        return redirect('/')
-    else:
-    	return render_template("register.html", logged_in=logged_in)
+		flash(f"Account created successfully for {name}!", 'success')
+		return redirect('/')
+	else:
+		return render_template("register.html", logged_in=logged_in)
 
 if __name__ == "__main__":
 	import click
