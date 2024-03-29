@@ -11,7 +11,7 @@ app.config['SECRET_KEY'] = 'f4de96d218da7e5c0db80c4690b75301'
 
 DATABASE_USERNAME = "el3194"
 DATABASE_PASSWRD = "el3194"
-DATABASE_HOST = "35.212.75.104" # change to 34.28.53.86 (34.148.107.47) if you used database 2 for part 2
+DATABASE_HOST = "35.212.75.104"
 DATABASEURI = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWRD}@{DATABASE_HOST}/proj1part2"
 
 # This line creates a database engine that knows how to connect to the URI above.
@@ -289,7 +289,7 @@ def update_profile():
 			params['new_username'] = username
 		if password:
 			update_query += "Password = (:new_password), "
-			params['new_password'] = name
+			params['new_password'] = password
 
 		update_query = update_query.rstrip(', ')
 		update_query += "Where User_ID = (:user_id)"
@@ -335,7 +335,7 @@ def follow():
 		g.conn.execute(text(insertion_query), params)
 		g.conn.commit()
 
-		flash('Follow successful', 'success')
+		flash('You are now following ' + followed_username, 'success')
 		return redirect(f'/Profile?username={followed_username}')
 
 @app.route('/Unfollow', methods=['POST'])
@@ -370,7 +370,7 @@ def unfollow():
 		g.conn.execute(text(deletion_query), params)
 		g.conn.commit()
 
-		flash('Unfollow successful', 'success')
+		flash('You have unfollowed ' + followed_username, 'success')
 		return redirect(f'/Profile?username={followed_username}')
 
 
@@ -456,11 +456,16 @@ def add_tag():
 		tag_exists = g.conn.execute(text(select_query), param).fetchone()
 		
 		if tag_exists:
-			param = {'tag': tag}
-			select_exists_query = """Select * from Tags Where Tag_Name = (:tag)"""
-			tag_already_exists = g.conn.execute(text(select_query), param).fetchone()
+			tag_id = tag_exists[0]
+			if post_id:
+				param = {'post_id': post_id, 'tag_id': tag_id}
+				select_exists_query = """Select * from Have_Post_Tag Where Post_ID = (:post_id) And Tag_ID = (:tag_id)"""
+			else:
+				param = {'recipe_id': recipe_id, 'tag_id': tag_id}
+				select_exists_query = """Select * from Have_Recipe_Tag Where Recipe_ID = (:recipe_id) And Tag_ID = (:tag_id)"""
+			already_has_tag = g.conn.execute(text(select_exists_query), param).fetchone()
 
-			if tag_already_exists:
+			if already_has_tag:
 				if post_id:
 					flash('This' + ' post ' + 'already has that tag', 'danger')
 					return redirect(f'/AddTag?post_id={post_id}')
@@ -485,7 +490,7 @@ def add_tag():
 				if post_id:
 					flash('Tag added successfully to post', 'success')
 				elif recipe_id:
-					flash('Tag added successfully to Recipe', 'success')
+					flash('Tag added successfully to recipe', 'success')
 				return redirect('/Profile')
 		else:
 			flash("The tag name entered doesn't exist yet. Create a new tag", 'danger')
@@ -749,7 +754,7 @@ def create_post():
 		return redirect('/Create')
 	
 	current_time = datetime.now()
-	formatted_time = current_time.strftime("%y/%m/%d")
+	formatted_time = current_time.strftime("%Y-%m-%d")
 
 	if video_file.filename != '':
 		file_path = save_video(video_file)
