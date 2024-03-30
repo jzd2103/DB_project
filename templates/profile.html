@@ -18,6 +18,7 @@
                 <p><strong>Following:</strong> {{ number_following }}</p>
                 {% if users[0].username == logged_in_username %}
                     <a class="btn btn-outline-info" href="/UpdateProfile">Update Profile</a>
+                    <a class="btn btn-outline-info" href="/Delete_Account">Delete Account</a>
                 {% endif %}
                 {% if users[0].username != logged_in_username %}
                     {% if not is_following %}
@@ -138,8 +139,10 @@
                                 <p style="text-align: center;">{{ users[0].username }} has not created any collections yet</p>
                             {% else %}
                                 {% for cname in collections.collection_name %}
-                                    <h4 class = "text-center"> {{ cname }}</h4>
-                                    <a class="btn btn-outline-info mb-2" href="/create_collection">View Collection</a>
+                                    <div class="collection-border m-2">
+                                        <h4 class = "text-center"> {{ cname }}</h4>
+                                        <a class="btn btn-outline-info mb-2" href="/view_collection?collection_name={{ cname }}">View Collection</a>
+                                    </div>
                                 {% endfor %}
                             {% endif %}
                         </div>

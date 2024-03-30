@@ -666,6 +666,22 @@ def update_recipe():
 	
 	return render_template('update_recipe.html', logged_in=logged_in)
 
+@app.route('/view_collection')
+def view_collection():
+	global logged_in
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+	
+	if(request.args.get('collection_name')):
+		c_name = request.args.get('collection_name')
+	else:
+		flash('Error: no collection to view', 'danger')
+		return redirect('/Profile')
+	
+	return render_template('view_collection.html', logged_in=logged_in, collection_name=c_name)
+
 @app.route('/add_to_collection', methods=['GET','POST'])
 def add_to_collection():
 	global user_id
@@ -1047,6 +1063,28 @@ def register():
 		return redirect('/')
 	else:
 		return render_template("register.html", logged_in=logged_in)
+
+@app.route('/Delete_Account', methods=['GET', 'POST'])
+def delete_profile():
+	global logged_in
+	global user_id
+	global logged_in_username
+
+	if(not logged_in):
+		flash('Error: you are not logged in', 'danger')
+		return redirect('/')
+	
+	if request.method == 'POST':
+		response = request.form.get('response')
+		if response == "Yes":
+			flash('Your account has been deleted.', 'danger')
+			return redirect('/')
+		else:
+			flash('Your account was not deleted.', 'success')
+			return redirect('/Profile')
+
+	return render_template("delete_confirmation.html", logged_in=logged_in)
+
 
 if __name__ == "__main__":
 	import click

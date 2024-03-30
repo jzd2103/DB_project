@@ -13,6 +13,11 @@
     border-radius: 15px;
 }
 
+.collection-border{
+    border: 2px solid rgb(233, 188, 196);
+    border-radius: 15px;
+}
+
 div h1{
     font-family: serif;
     color: rgb(180, 20, 20);

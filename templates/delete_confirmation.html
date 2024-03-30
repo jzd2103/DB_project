@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-7 light-border light-background p-4">
+            <form method="POST" action="/Delete_Account">
+                <fieldset class="form-group text-center">
+                    <legend class="fw-bold border-bottom mb-4">Warning: Are you sure you want to delete your account?</legend>
+                    <input type="submit" name="response" value="Yes" class = "btn btn-success">
+                    <input type="submit" name="response" value="No" class = "btn btn-danger">
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
