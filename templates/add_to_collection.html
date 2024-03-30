@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-10 light-border light-background p-4">
+            <form method="POST" action="/add_to_collection">
+                <fieldset class="form-group">
+                {% if request.args.get('post_id') %}
+                    <input type="hidden" name="post_id" value="{{ request.args.get('post_id') }}">
+                    <legend class="border-bottom mb-4">Add Post To Collection</legend>
+                {% endif %}
+                {% if request.args.get('recipe_id') %}
+                    <input type="hidden" name="recipe_id" value="{{ request.args.get('recipe_id') }}">
+                    <legend class="border-bottom mb-4">Add Recipe To Collection</legend>
+                {% endif %}
+                    <label for="collection_name" class="form-label">* Choose a Collection:</label><br>
+
+                    <select name="collection_name" id="collection_name" style="margin-right: 10px">
+                        {% for cname in collections.collection_name %}
+                            <option value="{{ cname }}">{{ cname }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <input type="submit" value="Add" class = "btn btn-outline-info">
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

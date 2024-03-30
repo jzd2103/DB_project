@@ -19,6 +19,12 @@ div h1{
     font-weight: bold;
 }
 
+div h4{
+    font-family: serif;
+    color:rgb(180, 20, 20);
+    font-weight: bold;
+}
+
 .image_file{
     width: 100%;
     margin: 2%;

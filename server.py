@@ -91,36 +91,24 @@ def home():
 				'yum': yum, 'yuck': yuck})
 
 	cursor.close()
-
-	if user_id:
-		params = {'user_id': user_id}
-		username_query = """Select Username
-							From Users
-							Where User_ID = (:user_id)"""
-		
-		loggedin_user = g.conn.execute(text(username_query), params).fetchone()[0]
-	else:
-		loggedin_user = None
 	
-	global logged_in
-	return render_template("feed.html", posts=posts, logged_in=logged_in, loggedin_user=loggedin_user)
+	return render_template("feed.html", posts=posts, logged_in=logged_in, loggedin_user=logged_in_username)
 
 @app.route('/Recipes')
 def recipes():
-	recipe_query = """Select Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
+	recipe_query = """Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
 					  from Recipes natural join Users natural join Create_recipe"""
 	
 	cursor = g.conn.execute(text(recipe_query))	
 	recipes = []
 
-	for Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
-		recipes.append({'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
+	for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
+		recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
 						'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
 
 	cursor.close()
 
-	global logged_in
-	return render_template("recipe.html", recipes=recipes, logged_in=logged_in)
+	return render_template("recipe.html", recipes=recipes, logged_in=logged_in, loggedin_user=logged_in_username)
 
 @app.route('/Profile')
 def profile():
@@ -141,6 +129,10 @@ def profile():
 	recipe_query = """Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
 							from Recipes natural join Users natural join Create_recipe
 							Where User_ID = (:user_id)"""
+	
+	collection_query = """SELECT Collection_Name
+						  FROM Collections
+						  Where User_ID = (:user_id)"""
 
 	user_query = """Select Name, Address, Biography, Date_of_Birth, Username
 							From Users Where User_ID = (:user_id)"""
@@ -231,6 +223,14 @@ def profile():
 
 		for Name, Address, Biography, Date_of_Birth, Username in cursor:
 			users.append({'name': Name, 'address': Address, 'biography': Biography, 'date_of_birth': Date_of_Birth, 'username': Username})
+
+		cursor = g.conn.execute(text(collection_query), params)
+		c_list = []
+		
+		for Collection_Name in cursor:
+			c_list.append(Collection_Name[0])
+
+		collections = {'collection_name': c_list}
 		
 		cursor.close()
 
@@ -244,8 +244,9 @@ def profile():
 							  Where Followed_ID = (:user_id)"""
 		number_followers = g.conn.execute(text(followers_query), params).fetchone()[0]
 
-		return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes, logged_in_username=logged_in_username,
-						 username_viewing=logged_in_username, number_followers=number_followers, number_following=number_following)
+		return render_template("profile.html", logged_in=logged_in, users=users, posts=posts, recipes=recipes, collections=collections,
+						 logged_in_username=logged_in_username, username_viewing=logged_in_username, number_followers=number_followers, 
+						 number_following=number_following)
 
 @app.route('/UpdateProfile', methods=['POST', 'GET'])
 def update_profile():
@@ -306,7 +307,6 @@ def update_profile():
 @app.route('/Follow', methods=['POST'])
 def follow():
 	global user_id
-	global logged_in
 	
 	followed_username = request.form.get('followed_username')
 
@@ -341,7 +341,6 @@ def follow():
 @app.route('/Unfollow', methods=['POST'])
 def unfollow():
 	global user_id
-	global logged_in
 
 	followed_username = request.form.get('followed_username')
 
@@ -506,7 +505,7 @@ def add_tag():
 		add_tag_user_id = g.conn.execute(text(user_id_query), params).fetchone()[0]
 		if user_id != add_tag_user_id:
 			flash('You cannot add a tag to a' + ' post ' + 'that is not yours', 'danger')
-			return redirect('/')
+			return redirect('/Profile')
 	elif recipe_id:
 		params = {'recipe_id': recipe_id}
 		user_id_query = """Select User_ID
@@ -515,7 +514,7 @@ def add_tag():
 		add_tag_user_id = g.conn.execute(text(user_id_query), params).fetchone()[0]
 		if user_id != add_tag_user_id:
 			flash('You cannot add a tag to a' + ' recipe ' + 'that is not yours', 'danger')
-			return redirect('/')
+			return redirect('/Profile')
 	elif post_id == '' or recipe_id == '':
 		flash('Error: no post or recipe to add tag to')
 		return redirect('/')
@@ -586,7 +585,7 @@ def update_post():
 		update_post_user_id = g.conn.execute(text(post_user_query), params).fetchone()[0]
 		if user_id != update_post_user_id:
 			flash('You cannot update a post that is not yours', 'danger')
-			return redirect('/')
+			return redirect('/Profile')
 	elif post_id == '':
 		flash('Error: no post to update')
 		return redirect('/')
@@ -660,12 +659,141 @@ def update_recipe():
 		update_recipe_user_id = g.conn.execute(text(recipe_user_query), params).fetchone()[0]
 		if user_id != update_recipe_user_id:
 			flash('You cannot update a recipe that is not yours', 'danger')
-			return redirect('/')
+			return redirect('/Profile')
 	elif recipe_id == '':
 		flash('Error: no recipe to update')
 		return redirect('/')
 	
 	return render_template('update_recipe.html', logged_in=logged_in)
+
+@app.route('/add_to_collection', methods=['GET','POST'])
+def add_to_collection():
+	global user_id
+	global logged_in
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+
+	if request.method == 'POST':
+		collection_name = request.form.get('collection_name')
+		params = {'user_id': user_id, 'collection_name': collection_name}
+		c_id_query = """SELECT Collection_ID
+						FROM Collections
+						WHERE User_ID = (:user_id) AND Collection_Name = (:collection_name)"""
+		
+		collection_id = g.conn.execute(text(c_id_query), params).fetchone()[0]
+
+		post_id = request.form.get('post_id')
+		if post_id:
+			params = {'user_id': user_id, 'collection_id': collection_id, 'post_id': post_id}
+
+			check_query = """SELECT * FROM Contain_Post
+							 WHERE User_ID = (:user_id) AND Collection_ID = (:collection_id) AND Post_ID = (:post_id)"""
+			exists = g.conn.execute(text(check_query), params).fetchone()
+			if exists:
+				flash('This post is already in the ' + collection_name + ' collection', 'danger')
+				return redirect('/')
+
+			insert_query = """INSERT INTO Contain_Post
+							Values (:user_id, :collection_id, :post_id)"""
+			
+			g.conn.execute(text(insert_query), params)
+			g.conn.commit()
+
+			flash('Post added to ' + collection_name + ' collection', 'success')
+		else:
+			recipe_id = request.form.get('recipe_id')
+			params = {'recipe_id': recipe_id, 'user_id': user_id, 'collection_id': collection_id}
+
+			check_query = """SELECT * FROM Contain_Recipe
+							 WHERE User_ID = (:user_id) AND Collection_ID = (:collection_id) AND Recipe_ID = (:recipe_id)"""
+			exists = g.conn.execute(text(check_query), params).fetchone()
+			if exists:
+				flash('This recipe is already in the ' + collection_name + ' collection', 'danger')
+				return redirect('/Recipes')
+			
+			insert_query = """INSERT INTO Contain_Recipe
+							Values (:recipe_id, :user_id, :collection_id)"""
+			
+			g.conn.execute(text(insert_query), params)
+			g.conn.commit()
+
+			flash('Recipe added to ' + collection_name + ' collection', 'success')
+
+		return redirect('/Profile')
+	
+	params = {'user_id': user_id}
+	exist_query = """SELECT *
+					 FROM Collections
+					 Where User_ID = (:user_id)"""
+	
+	exists_collections = g.conn.execute(text(exist_query), params).fetchone()
+	if not exists_collections:
+		flash('You need to create a collection first')
+		return redirect('/Create')
+
+	params = {'user_id': user_id}
+	collection_query = """SELECT Collection_Name
+						  FROM Collections
+						  Where User_ID = (:user_id)"""
+	
+	cursor = g.conn.execute(text(collection_query), params)
+	collections = []
+	c_list = []
+	
+	for Collection_Name in cursor:
+		c_list.append(Collection_Name[0])
+
+	collections = {'collection_name': c_list}
+	
+	cursor.close()
+
+	return render_template('add_to_collection.html', user_id=user_id, logged_in=logged_in, collections=collections)
+
+@app.route('/create_collection', methods=['POST'])
+def create_collection():
+	global user_id
+
+	params = {'user_id': user_id}
+	next_collection_query = """SELECT count(*)
+								FROM Collections
+								WHERE User_ID = (:user_id)"""
+	
+	number_collections = g.conn.execute(text(next_collection_query), params).fetchone()[0]
+	c_name = request.form.get('collection_name')
+
+	if c_name == '':
+		flash('Please enter a name for your collection', 'danger')
+		return redirect('/Create')
+	
+	if number_collections > 0:
+		params = {'user_id': user_id, 'collection_name': c_name}
+		check_query = """SELECT * FROM Collections
+							WHERE User_ID = (:user_id) AND Collection_Name = (:collection_name)"""
+		
+		collection_exists = g.conn.execute(text(check_query), params).fetchone()
+		if collection_exists:
+			flash('There already exists a collection with this name', 'danger')
+			return redirect('/Create')
+
+	next_collection_id = number_collections + 1
+
+	params = {'collection_id': next_collection_id, 'user_id': user_id, 'collection_name': c_name}
+	insert_query = """INSERT INTO Collections
+						Values (:collection_id, :user_id, :collection_name)"""
+	
+	g.conn.execute(text(insert_query), params)
+
+	params = {'user_id': user_id, 'collection_id': next_collection_id}
+	insert_own_query = """INSERT INTO Own
+						Values (:user_id, :collection_id)"""
+	g.conn.execute(text(insert_own_query), params)
+
+	g.conn.commit()
+
+	flash('Collection created successfully', 'success')
+	return redirect('/Profile')
 
 @app.route('/Create')
 def create():
@@ -822,6 +950,7 @@ def login():
 def logout():
 	global logged_in
 	global user_id
+	global logged_in_username
 
 	if(not logged_in):
 		flash('Error: you are not logged in', 'danger')
@@ -829,6 +958,7 @@ def logout():
 	
 	logged_in = False
 	user_id = None
+	logged_in_username = None
 	flash("You have been logged out successfully", 'success')
 	return redirect('/')
 
@@ -885,6 +1015,15 @@ def register():
 
 		if not name or not dob or not username or not password:
 			flash('* fields are required', 'danger')
+			return redirect('/register')
+		
+		params = {'username': username}
+		check_username = """SELECT * FROM Users
+							Where Username = (:username)"""
+		
+		username_exists = g.conn.execute(text(check_username), params).fetchone()
+		if username_exists:
+			flash('Sorry, that username is already taken.', 'danger')
 			return redirect('/register')
 
 		params = {

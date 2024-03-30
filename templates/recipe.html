@@ -10,13 +10,19 @@
         <div class="col-8">
             {% for recipe in recipes %}
                 <div class="row light-border light-background m-3 p-2 justify-content-center">
-                    <div class="col-11">
-                        <h1 class = "text-center"> {{ recipe.recipe_name }}</h1>
-                        <p class = "text-center">by {{recipe.username }}</p>
+                    <div class="col-11 text-center">
+                        <h1> {{ recipe.recipe_name }}</h1>
+                        {% if recipe.username == loggedin_user %}
+                            <p style="display: inline;">by </p>
+                            <a class="me-3 fw-bold" href="/Profile">{{ recipe.username }}</a>
+                        {% else %}
+                            <p style="display: inline;">by </p>
+                            <a class="me-3 fw-bold" href="/Profile?username={{recipe.username}}">{{ recipe.username }}</a>
+                        {% endif %}
                     </div>
 
                     {% if recipe.image_file %}
-                        <img class="mt-0 image_file" src="static\images\{{recipe.image_file}}">
+                        <img class="mt-20 image_file" src="static\images\{{recipe.image_file}}">
                     {% endif %}
 
                     <div class="d-flex mt-1">
@@ -36,6 +42,9 @@
                                 {% endif %}
                             {% endfor %}
                         </ol>
+                        <div class="text-end">
+                            <a class="btn btn-outline-info" href="/add_to_collection?recipe_id={{ recipe.recipe_id }}">Add Recipe To Collection</a>
+                        </div>
                     </div>
                 </div>
             {% endfor %}

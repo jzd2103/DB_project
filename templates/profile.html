@@ -45,7 +45,9 @@
             <div class="row justify-content-center">
                 <div class="col-10">
                     {% if not posts %}
-                        <p style="text-align: center;">{{ users[0].username }} has not made any posts yet</p>
+                        <div class="row light-border light-background m-3 p-2 justify-content-center">
+                            <p style="text-align: center;">{{ users[0].username }} has not made any posts yet</p>
+                        </div>
                     {% else %}
                         {% for post in posts %}
                             <div class="row light-border light-background m-3 p-2 justify-content-center">
@@ -79,7 +81,9 @@
             <div class="row justify-content-center">
                 <div class="col-10">
                     {% if not recipes %}
-                        <p style="text-align: center;">{{ users[0].username }} has not created any recipes yet</p>
+                        <div class="row light-border text-center light-background m-3 p-2 justify-content-center">
+                            <p>{{ users[0].username }} has not created any recipes yet</p>
+                        </div>
                     {% else %}
                         {% for recipe in recipes %}
                             <div class="row light-border light-background m-3 p-2 justify-content-center">
@@ -120,6 +124,29 @@
                 </div>
             </div>
         </div>
+        {% if users[0].username == logged_in_username %}
+            <div class="col-4 min-width">
+                <div class="row justify-content-center">
+                    <div class="col-10">
+                        <h1 class="text-center pb-2 border-bottom border-3 border-light"> Collections</h1>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-10 text-center">
+                        <div class="row light-border light-background m-3 p-2 justify-content-center">
+                            {% if not collections.collection_name %}
+                                <p style="text-align: center;">{{ users[0].username }} has not created any collections yet</p>
+                            {% else %}
+                                {% for cname in collections.collection_name %}
+                                    <h4 class = "text-center"> {{ cname }}</h4>
+                                    <a class="btn btn-outline-info mb-2" href="/create_collection">View Collection</a>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
 
