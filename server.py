@@ -1115,6 +1115,62 @@ def delete_profile():
 	if request.method == 'POST':
 		response = request.form.get('response')
 		if response == "Yes":
+			params = {'user_id': user_id}
+
+			urls_query = """SELECT Image_Url, Video_Url
+							FROM Posts Natural Join Make
+							WHERE User_ID = (:user_id)"""
+			
+			urls = g.conn.execute(text(urls_query), params)
+
+			for image_url, video_url in urls:
+				if image_url:
+					image_path = f"static/images/{image_url}"
+					if os.path.exists(image_path):
+						os.remove(image_path)
+				else:
+					video_path = f"static/videos/{video_url}"
+					if os.path.exists(video_path):
+						os.remove(video_path)
+
+			image_query = """SELECT Image_Url
+							FROM Recipes Natural Join Create_Recipe
+							WHERE User_ID = (:user_id)"""
+			
+			image_urls = g.conn.execute(text(image_query), params)
+
+			for r in image_urls:
+				image_url = r[0]
+				if image_url:
+					image_path = f"static/images/{image_url}"
+					if os.path.exists(image_path):
+						os.remove(image_path)
+			
+			delete_posts = """DELETE FROM Posts p
+							  USING Make m
+							  WHERE p.Post_ID = m.Post_ID
+							  AND m.User_ID = (:user_id)"""
+			
+			g.conn.execute(text(delete_posts), params)
+
+			delete_recipes = """DELETE FROM Recipes r
+								USING Create_Recipe cr
+								WHERE r.Recipe_ID = cr.Recipe_ID
+							    AND cr.User_ID = (:user_id)"""
+			
+			g.conn.execute(text(delete_recipes), params)
+
+			delete_user = """DELETE FROM Users
+							 Where User_ID = (:user_id)"""
+			
+			g.conn.execute(text(delete_user), params)
+
+			g.conn.commit()
+
+			logged_in = False
+			user_id = None
+			logged_in_username = None
+
 			flash('Your account has been deleted.', 'danger')
 			return redirect('/')
 		else:

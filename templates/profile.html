@@ -134,9 +134,9 @@
                 </div>
                 <div class="row justify-content-center">
                     <div class="col-10 text-center">
-                        <div class="row light-border light-background m-3 p-2 justify-content-center">
+                        <div class="row light-border light-background m-3 p-2 text-center justify-content-center">
                             {% if not collections.collection_name %}
-                                <p style="text-align: center;">{{ users[0].username }} has not created any collections yet</p>
+                                {{ users[0].username }} has not created any collections yet
                             {% else %}
                                 {% for cname in collections.collection_name %}
                                     <div class="collection-border m-2">
