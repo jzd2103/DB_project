@@ -121,21 +121,20 @@ def profile():
 		return redirect('/')
 
 	post_query = """Select username, post_id, caption, image_URL, video_URL
-							From Posts Natural Join Make Natural Join Users
-							Where User_ID = (:user_id)
-							Order by Date_Posted DESC
-							"""
+					From Posts Natural Join Make Natural Join Users
+					Where User_ID = (:user_id)
+					Order by Date_Posted DESC"""
 			
 	recipe_query = """Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
-							from Recipes natural join Users natural join Create_recipe
-							Where User_ID = (:user_id)"""
+					  from Recipes natural join Users natural join Create_recipe
+					  Where User_ID = (:user_id)"""
 	
 	collection_query = """SELECT Collection_Name
 						  FROM Collections
 						  Where User_ID = (:user_id)"""
 
 	user_query = """Select Name, Address, Biography, Date_of_Birth, Username
-							From Users Where User_ID = (:user_id)"""
+					From Users Where User_ID = (:user_id)"""
 
 	if(request.args.get('username')):
 		username_viewing = request.args.get('username')
@@ -669,6 +668,7 @@ def update_recipe():
 @app.route('/view_collection')
 def view_collection():
 	global logged_in
+	global user_id
 
 	if(not logged_in):
 		flash('You are not logged in', 'danger')
@@ -676,11 +676,49 @@ def view_collection():
 	
 	if(request.args.get('collection_name')):
 		c_name = request.args.get('collection_name')
+		c_id = """Select collection_id 
+				  From Collections
+				  Where user_id = (:user_id) and collection_name = (:collection_name)"""
+		
+		params1 = {'collection_name': c_name, 'user_id': user_id}
+		c_id = g.conn.execute(text(c_id), params1).fetchone()[0]
+
+		params2 = {'user_id': user_id, 'collection_id': c_id}
+
+		post_query = """SELECT u.Username, p.Post_ID, p.Caption, p.Image_URL, p.Video_URL
+						FROM Posts p
+						JOIN Make m ON p.Post_ID = m.Post_ID
+						JOIN Users u ON m.User_ID = u.User_ID
+						JOIN Contain_Post cp ON p.Post_ID = cp.Post_ID
+						JOIN Collections c ON cp.User_ID = c.User_ID AND cp.Collection_ID = c.Collection_ID
+						WHERE c.Collection_ID = (:collection_id) and c.User_id = (:user_id)"""
+		
+		recipe_query = """Select r.Recipe_ID, u.Username, r.Recipe_Name, r.Description, r.Ingredients, r.Directions, r.Cook_Time, r.Image_URL 
+						  FROM Recipes r
+						  JOIN Create_Recipe cr ON r.Recipe_ID = cr.Recipe_ID
+						  JOIN Users u ON cr.User_ID = u.User_ID
+						  JOIN Contain_Recipe ON r.Recipe_ID = Contain_Recipe.Recipe_ID
+						  JOIN Collections c ON Contain_Recipe.User_ID = c.User_ID AND Contain_Recipe.Collection_ID = c.Collection_ID
+						  WHERE c.Collection_ID = (:collection_id) and c.User_id = (:user_id)"""
+		
+		posts, recipes = [], []
+		cursor = g.conn.execute(text(post_query), params2)
+
+		for username, post_id, caption, image_url, video_url in cursor:
+			posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url})
+
+		cursor = g.conn.execute(text(recipe_query), params2)	
+
+		for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
+			recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
+							'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
+			
+		cursor.close()
 	else:
 		flash('Error: no collection to view', 'danger')
 		return redirect('/Profile')
 	
-	return render_template('view_collection.html', logged_in=logged_in, collection_name=c_name)
+	return render_template('view_collection.html', logged_in=logged_in, collection_name=c_name, posts=posts, recipes=recipes, loggedin_user=logged_in_username)
 
 @app.route('/add_to_collection', methods=['GET','POST'])
 def add_to_collection():

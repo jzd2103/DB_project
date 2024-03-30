@@ -47,7 +47,7 @@
                 <div class="col-10">
                     {% if not posts %}
                         <div class="row light-border light-background m-3 p-2 justify-content-center">
-                            <p style="text-align: center;">{{ users[0].username }} has not made any posts yet</p>
+                            {{ users[0].username }} has not made any posts yet
                         </div>
                     {% else %}
                         {% for post in posts %}
@@ -83,7 +83,7 @@
                 <div class="col-10">
                     {% if not recipes %}
                         <div class="row light-border text-center light-background m-3 p-2 justify-content-center">
-                            <p>{{ users[0].username }} has not created any recipes yet</p>
+                            {{ users[0].username }} has not created any recipes yet
                         </div>
                     {% else %}
                         {% for recipe in recipes %}

@@ -12,11 +12,10 @@
                 <div class="row light-border light-background m-3 p-2 justify-content-center">
                     <div class="col-11 text-center">
                         <h1> {{ recipe.recipe_name }}</h1>
+                        <p style="display: inline;">by </p>
                         {% if recipe.username == loggedin_user %}
-                            <p style="display: inline;">by </p>
                             <a class="me-3 fw-bold" href="/Profile">{{ recipe.username }}</a>
                         {% else %}
-                            <p style="display: inline;">by </p>
                             <a class="me-3 fw-bold" href="/Profile?username={{recipe.username}}">{{ recipe.username }}</a>
                         {% endif %}
                     </div>
