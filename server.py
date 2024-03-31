@@ -51,59 +51,66 @@ def teardown_request(exception):
 
 @app.route('/', methods=['POST', 'GET'])
 def home():
+	order = 'Random'
+	post_query = """Select username, post_id, caption, image_URL, video_URL
+						From Posts Natural Join Make Natural Join Users
+						Order by RANDOM()"""
 
-	order = 'Latest'
 	if request.method == 'POST':
-		order = request.form['order']
-		tag = request.form.get('tag')
+		if 'order' in request.form:
+			order = request.form['order']
+			if order == 'Random':
+				post_query = """Select username, post_id, caption, image_URL, video_URL
+								From Posts Natural Join Make Natural Join Users
+								Order by RANDOM()"""
+			elif order == 'Latest':
+				post_query = """Select username, post_id, caption, image_URL, video_URL
+								From Posts Natural Join Make Natural Join Users
+								Order by Date_Posted DESC
+							"""
+			elif order == 'Oldest':
+				post_query = """Select username, post_id, caption, image_URL, video_URL
+								From Posts Natural Join Make Natural Join Users
+								Order by Date_Posted ASC
+								"""
+			elif order == 'Most Popular':
+				post_query = """WITH TopPosts AS (SELECT Post_ID, SUM(Rating) AS Likes
+												FROM Rate
+												GROUP BY Post_ID
+												)
+								Select username, post_id, caption, image_URL, video_URL
+								From TopPosts Natural Join Posts Natural Join Users Natural Join Make
+								ORDER BY Likes DESC
+							"""
+			elif order == 'Following':
+				post_query = f"""WITH Following_Posts AS (Select Post_ID
+														From Make
+														Where user_id IN (Select Followed_ID 
+																		From Follow
+																		Where Follower_ID = {user_id}))
+								Select username, post_id, caption, image_URL, video_URL
+								From Following_Posts Natural Join Posts Natural Join Users Natural Join Make
+							"""
+		elif 'tag' in request.form:
+			tag = request.form.get('tag')
 
-		if tag:
+			if not tag:
+				flash("No Tag Entered", 'danger')
+				return redirect('/')
+
 			param = {'tag': tag}
 			select_query = """Select Tag_ID from Tags Where Tag_Name = (:tag)"""
 			tag_exists = g.conn.execute(text(select_query), param).fetchone()
 
 			if not tag_exists:
 				flash("The tag entered does not exist", 'danger')
+				return redirect('/')
 			else:
 				tag_id = tag_exists[0]
-			
+				
 				post_query = f"""Select username, post_id, caption, image_URL, video_URL
-							     From Posts Natural Join Users Natural Join Make Natural Join Have_Post_Tag
-							     Where tag_id = {tag_id}"""
-
-		elif order == 'Latest':
-			post_query = """Select username, post_id, caption, image_URL, video_URL
-							From Posts Natural Join Make Natural Join Users
-							Order by Date_Posted DESC
-							"""
-		elif order == 'Oldest':
-			post_query = """Select username, post_id, caption, image_URL, video_URL
-							From Posts Natural Join Make Natural Join Users
-							Order by Date_Posted ASC
-							"""
-		elif order == 'Most Popular':
-			post_query = """WITH TopPosts AS (SELECT Post_ID, SUM(Rating) AS Likes
-         		         					  FROM Rate
-                            				  GROUP BY Post_ID
-                        					  )
-							Select username, post_id, caption, image_URL, video_URL
-							From TopPosts Natural Join Posts Natural Join Users Natural Join Make
-							ORDER BY Likes DESC
-						"""
-		elif order == 'Following':
-			post_query = f"""WITH Following_Posts AS (Select Post_ID
-													 From Make
-							                         Where user_id IN (Select Followed_ID 
-											                           From Follow
-							                                           Where Follower_ID = {user_id}))
-							Select username, post_id, caption, image_URL, video_URL
-							From Following_Posts Natural Join Posts Natural Join Users Natural Join Make
-						 """
-	else:
-		post_query = """Select username, post_id, caption, image_URL, video_URL
-						From Posts Natural Join Make Natural Join Users
-						Order by Date_Posted DESC
-					"""
+								From Posts Natural Join Users Natural Join Make Natural Join Have_Post_Tag
+								Where tag_id = {tag_id}"""
 
 	cursor = g.conn.execute(text(post_query))
 	posts = []
@@ -144,10 +151,49 @@ def home():
 	
 	return render_template("feed.html", posts=posts, logged_in=logged_in, loggedin_user=logged_in_username, order=order)
 
-@app.route('/Recipes')
+@app.route('/Recipes', methods=['POST', 'GET'])
 def recipes():
+	view = 'Random'
 	recipe_query = """Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
-					  from Recipes natural join Users natural join Create_recipe"""
+					  from Recipes natural join Users natural join Create_recipe
+					  Order by RANDOM()"""
+	
+	if request.method == 'POST':
+		if 'view' in request.form:
+			view = request.form['view']
+			if view == 'Random':
+				recipe_query = """Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
+					  			  from Recipes natural join Users natural join Create_recipe
+					   			  Order by RANDOM()"""
+			elif view == 'Following':
+				recipe_query = f"""WITH Following_R AS (Select Recipe_ID
+														From Create_Recipe
+														Where User_id IN (Select Followed_ID 
+																		  From Follow
+																		  Where Follower_ID = {user_id}))
+								   Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
+								   From Following_R Natural Join Recipes Natural Join Users Natural Join Create_recipe
+							"""
+		elif 'tag' in request.form:
+			tag = request.form.get('tag')
+
+			if not tag:
+				flash("No Tag Entered", 'danger')
+				return redirect('/Recipes')
+
+			param = {'tag': tag}
+			select_query = """Select Tag_ID from Tags Where Tag_Name = (:tag)"""
+			tag_exists = g.conn.execute(text(select_query), param).fetchone()
+
+			if not tag_exists:
+				flash("The tag entered does not exist", 'danger')
+				return redirect('/Recipes')
+			else:
+				tag_id = tag_exists[0]
+				
+				recipe_query = f"""Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
+								   From Recipes Natural Join Users Natural Join Create_Recipe Natural Join Have_Recipe_Tag
+								   Where tag_id = {tag_id}"""
 	
 	cursor = g.conn.execute(text(recipe_query))	
 	recipes = []
@@ -158,7 +204,7 @@ def recipes():
 
 	cursor.close()
 
-	return render_template("recipe.html", recipes=recipes, logged_in=logged_in, loggedin_user=logged_in_username)
+	return render_template("recipe.html", recipes=recipes, logged_in=logged_in, loggedin_user=logged_in_username, view=view)
 
 @app.route('/Profile')
 def profile():
