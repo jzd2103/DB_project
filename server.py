@@ -49,12 +49,40 @@ def teardown_request(exception):
 		pass
 
 
-@app.route('/')
+@app.route('/', methods=['POST', 'GET'])
 def home():
-	post_query = """Select username, post_id, caption, image_URL, video_URL
-					From Posts Natural Join Make Natural Join Users
-					Order by Date_Posted DESC
+
+	order = 'Latest'
+	if request.method == 'POST':
+		order = request.form['order']
+		
+		if order == 'Latest':
+			post_query = """Select username, post_id, caption, image_URL, video_URL
+							From Posts Natural Join Make Natural Join Users
+							Order by Date_Posted DESC
+							"""
+		elif order == 'Oldest':
+			post_query = """Select username, post_id, caption, image_URL, video_URL
+							From Posts Natural Join Make Natural Join Users
+							Order by Date_Posted ASC
+							"""
+		elif order == 'Most Popular':
+			post_query = """WITH TopPosts AS (SELECT Post_ID, SUM(Rating) AS Likes
+         		         					  FROM Rate
+                            				  GROUP BY Post_ID
+                        					  )
+							Select username, post_id, caption, image_URL, video_URL
+							From TopPosts Natural Join Posts Natural Join Users Natural Join Make
+							ORDER BY Likes DESC
+						"""
+		elif order == 'Following':
+			print(order)
+	else:
+		post_query = """Select username, post_id, caption, image_URL, video_URL
+						From Posts Natural Join Make Natural Join Users
+						Order by Date_Posted DESC
 					"""
+
 	cursor = g.conn.execute(text(post_query))
 	posts = []
 
@@ -92,7 +120,7 @@ def home():
 
 	cursor.close()
 	
-	return render_template("feed.html", posts=posts, logged_in=logged_in, loggedin_user=logged_in_username)
+	return render_template("feed.html", posts=posts, logged_in=logged_in, loggedin_user=logged_in_username, order=order)
 
 @app.route('/Recipes')
 def recipes():

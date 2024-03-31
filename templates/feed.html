@@ -2,9 +2,28 @@
 {% block content %}
 
 <div class="container mt-4">
+    
     <div class="row justify-content-center">
         <div class="col-8">
-            <h1 class="text-center pb-2 border-bottom border-3 border-light"> Recent Posts</h1>
+            <h1 class="text-center pb-2 border-bottom border-3 border-light"> Posts</h1>
+        </div>
+    </div>
+
+    <div class="row justify-content-center mt-2">
+        <div class="col-6 light-background p-2 light-border">
+            <form method="POST" action="/">
+                <fieldset class="form-group">
+                    <legend class="text-center border-bottom mb-4">Filter Posts</legend>
+                        <label for="Order" class="form-label">Sort Posts:</label>
+                        <select id="Order" name="order" class="form-select">
+                            <option value="Latest" {% if order == 'Latest' %} selected {% endif %}>Latest</option>
+                            <option value="Oldest" {% if order == 'Oldest' %} selected {% endif %}>Oldest</option>
+                            <option value="Most Popular"{% if order == 'Most Popular' %} selected {% endif %}>Most Popular</option>
+                            <option value="Following" {% if order == 'Following' %} selected {% endif %}>Following</option>
+                        </select>
+                        <input type="submit" value="Sort" class = "mt-3 btn btn-outline-info">
+                </fieldset>
+            </form>
         </div>
     </div>
     <div class="row justify-content-center">
