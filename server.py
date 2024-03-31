@@ -115,10 +115,13 @@ def home():
 	cursor = g.conn.execute(text(post_query))
 	posts = []
 
+<<<<<<< Updated upstream
 	if cursor.fetchone() is None:
 		flash("No Posts exist with the applied filter", "info")
 		return redirect('/')
 
+=======
+>>>>>>> Stashed changes
 	for username, post_id, caption, image_url, video_url in cursor:
 		comments = []
 		comment_query = """Select Username as username1, Comment
@@ -149,6 +152,10 @@ def home():
 		posts.append({'username': username, 'post_id': post_id, 'caption': caption, 'video_url': video_url, 'image_url': image_url, 'comments': comments, 
 				'yum': yum, 'yuck': yuck})
 
+	if not posts:
+		flash("No Posts exists with the applied filter", "info")
+		return redirect('/')
+	
 	cursor.close()
 	
 	return render_template("feed.html", posts=posts, logged_in=logged_in, loggedin_user=logged_in_username, order=order)
@@ -196,17 +203,24 @@ def recipes():
 				recipe_query = f"""Select Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL
 								   From Recipes Natural Join Users Natural Join Create_Recipe Natural Join Have_Recipe_Tag
 								   Where tag_id = {tag_id}"""
-	
+				
 	cursor = g.conn.execute(text(recipe_query))	
 	recipes = []
 
+<<<<<<< Updated upstream
 	if cursor.fetchone() is None:
 		flash("No Recipes exist with the applied filter", "info")
 		return redirect('/Recipes')
 
+=======
+>>>>>>> Stashed changes
 	for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
 		recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
 						'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
+
+	if not recipes:
+		flash("No Recipes exists with the applied filter", "info")
+		return redirect('/Recipes')
 
 	cursor.close()
 
