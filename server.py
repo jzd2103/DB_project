@@ -76,7 +76,14 @@ def home():
 							ORDER BY Likes DESC
 						"""
 		elif order == 'Following':
-			print(order)
+			post_query = f"""WITH Following_Posts AS (Select Post_ID
+													 From Make
+							                         Where user_id IN (Select Followed_ID 
+											                           From Follow
+							                                           Where Follower_ID = {user_id}))
+							Select username, post_id, caption, image_URL, video_URL
+							From Following_Posts Natural Join Posts Natural Join Users Natural Join Make
+						 """
 	else:
 		post_query = """Select username, post_id, caption, image_URL, video_URL
 						From Posts Natural Join Make Natural Join Users
