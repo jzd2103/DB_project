@@ -115,13 +115,6 @@ def home():
 	cursor = g.conn.execute(text(post_query))
 	posts = []
 
-<<<<<<< Updated upstream
-	if cursor.fetchone() is None:
-		flash("No Posts exist with the applied filter", "info")
-		return redirect('/')
-
-=======
->>>>>>> Stashed changes
 	for username, post_id, caption, image_url, video_url in cursor:
 		comments = []
 		comment_query = """Select Username as username1, Comment
@@ -207,13 +200,6 @@ def recipes():
 	cursor = g.conn.execute(text(recipe_query))	
 	recipes = []
 
-<<<<<<< Updated upstream
-	if cursor.fetchone() is None:
-		flash("No Recipes exist with the applied filter", "info")
-		return redirect('/Recipes')
-
-=======
->>>>>>> Stashed changes
 	for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
 		recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
 						'ingredients': Ingredients, 'directions': Directions, 'cook_time': Cook_Time, 'image_file': Image_URL})
@@ -1023,18 +1009,17 @@ def create_recipe():
 	global user_id
 
 	recipe_name = request.form['recipe_name']
-	description = request.form['description']
+	description = request.form.get('description')
 	ingredients = request.form['ingredients']
 	directions = request.form['directions']
-	cook_time = request.form['cook_time']
+	cook_time = request.form.get('cook_time')
 	image_file = request.files.get('image_file')
 
-	if cook_time:
-		cook_time = int(cook_time)
-
-	if not recipe_name or not ingredients or not directions:
+	if not recipe_name or not ingredients or not directions or not cook_time:
 		flash('* fields are required', 'danger')
 		return redirect('/Create')
+	
+	cook_time = int(cook_time)
 	
 	if image_file is not None and image_file.filename != '':
 		file_path = save_image(image_file)
@@ -1256,6 +1241,25 @@ def delete_post():
 		response = request.form.get('response')
 		if response == "Yes":
 			post_id = request.form.get('post_id')
+			params = {'user_id': user_id, 'post_id': post_id}
+
+			urls_query = """SELECT Image_Url, Video_Url
+							FROM Posts Natural Join Make
+							WHERE User_ID = (:user_id)
+							AND Post_ID = (:post_id)"""
+			
+			urls = g.conn.execute(text(urls_query), params)
+
+			for image_url, video_url in urls:
+				if image_url:
+					image_path = f"static/images/{image_url}"
+					if os.path.exists(image_path):
+						os.remove(image_path)
+				else:
+					video_path = f"static/videos/{video_url}"
+					if os.path.exists(video_path):
+						os.remove(video_path)
+
 			params = {'post_id': post_id}
 			delete_query = """DELETE FROM Posts
 							  WHERE Post_ID = (:post_id)"""
@@ -1304,6 +1308,18 @@ def delete_recipe():
 		response = request.form.get('response')
 		if response == "Yes":
 			recipe_id = request.form.get('recipe_id')
+			params = {'recipe_id': recipe_id, 'user_id': user_id}
+			image_query = """SELECT Image_Url
+							FROM Recipes Natural Join Create_Recipe
+							WHERE User_ID = (:user_id)
+							AND Recipe_ID = (:recipe_id)"""
+			
+			image_url = g.conn.execute(text(image_query), params).fetchone()[0]
+			if image_url:
+				image_path = f"static/images/{image_url}"
+				if os.path.exists(image_path):
+					os.remove(image_path)
+
 			params = {'recipe_id': recipe_id}
 			delete_query = """DELETE FROM Recipes
 							  WHERE Recipe_ID = (:recipe_id)"""
@@ -1355,7 +1371,7 @@ def delete_collection():
 			params = {'collection_name': collection_name, 'user_id': user_id}
 			delete_query = """DELETE FROM Collections
 							  WHERE User_ID = (:user_id)
-							  AND Collection_Name = '(:collection_name)'"""
+							  AND Collection_Name = (:collection_name)"""
 			
 			g.conn.execute(text(delete_query), params)
 			g.conn.commit()
