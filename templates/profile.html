@@ -66,6 +66,7 @@
                                 {% if users[0].username == logged_in_username %}
                                     <a class="btn btn-outline-info" href="/UpdatePost?post_id={{ post.post_id }}">Update Post</a>
                                     <a class="btn btn-outline-info mt-2" href="/AddTag?post_id={{ post.post_id }}">Add Tag</a>
+                                    <a class="btn btn-outline-info mt-2" href="/Delete_Post?post_id={{ post.post_id }}">Delete Post</a>
                                 {% endif %}
                             </div>
                         {% endfor %}
@@ -118,6 +119,7 @@
                                 {% if users[0].username == logged_in_username %}
                                     <a class="btn btn-outline-info" href="/UpdateRecipe?recipe_id={{ recipe.recipe_id }}">Update Recipe</a>
                                     <a class="btn btn-outline-info mt-2" href="/AddTag?recipe_id={{ recipe.recipe_id }}">Add Tag</a>
+                                    <a class="btn btn-outline-info mt-2" href="/Delete_Recipe?recipe_id={{ recipe.recipe_id }}">Delete Recipe</a>
                                 {% endif %}
                             </div>
                         {% endfor %}
@@ -142,6 +144,7 @@
                                     <div class="collection-border m-2">
                                         <h4 class = "text-center"> {{ cname }}</h4>
                                         <a class="btn btn-outline-info mb-2" href="/view_collection?collection_name={{ cname }}">View Collection</a>
+                                        <a class="btn btn-outline-info mb-2" href="/Delete_Collection?collection_name={{ cname }}">Delete Collection</a>
                                     </div>
                                 {% endfor %}
                             {% endif %}

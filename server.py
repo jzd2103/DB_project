@@ -116,7 +116,7 @@ def home():
 	posts = []
 
 	if cursor.fetchone() is None:
-		flash("No Posts exists with the applied filter", "info")
+		flash("No Posts exist with the applied filter", "info")
 		return redirect('/')
 
 	for username, post_id, caption, image_url, video_url in cursor:
@@ -201,7 +201,7 @@ def recipes():
 	recipes = []
 
 	if cursor.fetchone() is None:
-		flash("No Recipes exists with the applied filter", "info")
+		flash("No Recipes exist with the applied filter", "info")
 		return redirect('/Recipes')
 
 	for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
@@ -596,29 +596,39 @@ def add_tag():
 			flash("The tag name entered doesn't exist yet. Create a new tag", 'danger')
 			return redirect('/Create')
 
-	post_id = request.args.get('post_id', None)
-	recipe_id = request.args.get('recipe_id', None)
+	post_id = request.args.get('post_id')
+	recipe_id = request.args.get('recipe_id')
 	if post_id:
 		params = {'post_id': post_id}
 		user_id_query = """Select User_ID
 							  From Posts Natural Join Make
 							  Where Post_ID = (:post_id)"""
-		add_tag_user_id = g.conn.execute(text(user_id_query), params).fetchone()[0]
-		if user_id != add_tag_user_id:
-			flash('You cannot add a tag to a' + ' post ' + 'that is not yours', 'danger')
+		exists = g.conn.execute(text(user_id_query), params).fetchone()
+		if exists:
+			add_tag_user_id = exists[0]
+			if user_id != add_tag_user_id:
+				flash('You cannot add a tag to a' + ' post ' + 'that is not yours', 'danger')
+				return redirect('/Profile')
+		else:
+			flash('Error: this post does not exist', 'danger')
 			return redirect('/Profile')
 	elif recipe_id:
 		params = {'recipe_id': recipe_id}
 		user_id_query = """Select User_ID
 							   From Recipes Natural Join Create_Recipe
 							  Where Recipe_ID = (:recipe_id)"""
-		add_tag_user_id = g.conn.execute(text(user_id_query), params).fetchone()[0]
-		if user_id != add_tag_user_id:
-			flash('You cannot add a tag to a' + ' recipe ' + 'that is not yours', 'danger')
+		exists = g.conn.execute(text(user_id_query), params).fetchone()
+		if exists:
+			add_tag_user_id = exists[0]
+			if user_id != add_tag_user_id:
+				flash('You cannot add a tag to a' + ' recipe ' + 'that is not yours', 'danger')
+				return redirect('/Profile')
+		else:
+			flash('Error: this recipe does not exist', 'danger')
 			return redirect('/Profile')
-	elif post_id == '' or recipe_id == '':
+	else:
 		flash('Error: no post or recipe to add tag to')
-		return redirect('/')
+		return redirect('/Profile')
 	
 	return render_template('AddTag.html', logged_in = logged_in)
 
@@ -676,20 +686,25 @@ def update_post():
 		flash("Your post has been updated successfully", 'success')
 		return redirect('/Profile')
 
-	post_id = request.args.get('post_id', None)
+	post_id = request.args.get('post_id')
 	if post_id:
 		params = {'post_id': post_id}
 		post_user_query = """Select User_ID
 							 From Posts Natural Join Make
 							 Where Post_ID = (:post_id)"""
 		
-		update_post_user_id = g.conn.execute(text(post_user_query), params).fetchone()[0]
-		if user_id != update_post_user_id:
-			flash('You cannot update a post that is not yours', 'danger')
+		exists = g.conn.execute(text(post_user_query), params).fetchone()
+		if exists:
+			update_post_user_id = exists[0]
+			if user_id != update_post_user_id:
+				flash('You cannot update a post that is not yours', 'danger')
+				return redirect('/Profile')
+		else:
+			flash('Error: this post does not exist', 'danger')
 			return redirect('/Profile')
-	elif post_id == '':
+	else:
 		flash('Error: no post to update')
-		return redirect('/')
+		return redirect('/Profile')
 	
 	return render_template('update_post.html', logged_in=logged_in)
 
@@ -750,20 +765,25 @@ def update_recipe():
 		flash("Your recipe has been updated successfully", 'success')
 		return redirect('/Profile')
 
-	recipe_id = request.args.get('recipe_id', None)
+	recipe_id = request.args.get('recipe_id')
 	if recipe_id:
 		params = {'recipe_id': recipe_id}
 		recipe_user_query = """Select User_ID
 							   From Recipes Natural Join Create_Recipe
 							   Where Recipe_ID = (:recipe_id)"""
 		
-		update_recipe_user_id = g.conn.execute(text(recipe_user_query), params).fetchone()[0]
-		if user_id != update_recipe_user_id:
-			flash('You cannot update a recipe that is not yours', 'danger')
+		exists = g.conn.execute(text(recipe_user_query), params).fetchone()
+		if exists:
+			update_recipe_user_id = exists[0]
+			if user_id != update_recipe_user_id:
+				flash('You cannot update a recipe that is not yours', 'danger')
+				return redirect('/Profile')
+		else:
+			flash('Error: this recipe does not exist', 'danger')
 			return redirect('/Profile')
-	elif recipe_id == '':
+	else:
 		flash('Error: no recipe to update')
-		return redirect('/')
+		return redirect('/Profile')
 	
 	return render_template('update_recipe.html', logged_in=logged_in)
 
@@ -783,7 +803,12 @@ def view_collection():
 				  Where user_id = (:user_id) and collection_name = (:collection_name)"""
 		
 		params1 = {'collection_name': c_name, 'user_id': user_id}
-		c_id = g.conn.execute(text(c_id), params1).fetchone()[0]
+		c_exists = g.conn.execute(text(c_id), params1).fetchone()
+		if c_exists:
+			c_id = c_exists[0]
+		else:
+			flash('Error: this collection does not exist', 'danger')
+			return redirect('/Profile')
 
 		params2 = {'user_id': user_id, 'collection_id': c_id}
 
@@ -1204,6 +1229,147 @@ def register():
 	else:
 		return render_template("register.html", logged_in=logged_in)
 
+@app.route('/Delete_Post', methods=['GET', 'POST'])
+def delete_post():
+	global logged_in
+	global user_id
+
+	if(not logged_in):
+		flash('Error: you are not logged in', 'danger')
+		return redirect('/')
+
+	if request.method == 'POST':
+		response = request.form.get('response')
+		if response == "Yes":
+			post_id = request.form.get('post_id')
+			params = {'post_id': post_id}
+			delete_query = """DELETE FROM Posts
+							  WHERE Post_ID = (:post_id)"""
+			
+			g.conn.execute(text(delete_query), params)
+			g.conn.commit()
+
+			flash('Your post was deleted.', 'danger')
+			return redirect('/Profile')
+		else:
+			flash('Your post was not deleted.', 'success')
+			return redirect('/Profile')
+	
+	post_id = request.args.get('post_id')
+	if post_id:
+		params = {'post_id': post_id}
+		post_user_query = """Select User_ID
+							 From Posts Natural Join Make
+							 Where Post_ID = (:post_id)"""
+		
+		exists = g.conn.execute(text(post_user_query), params).fetchone()
+		if exists:
+			delete_post_user_id = exists[0]
+			if user_id != delete_post_user_id:
+				flash('You cannot delete a post that is not yours', 'danger')
+				return redirect('/Profile')
+		else:
+			flash('Error: this post does not exist', 'danger')
+			return redirect('/Profile')
+	else:
+		flash('Error: no post to delete', 'danger')
+		return redirect('/Profile')
+
+	return render_template("delete_confirmation.html", logged_in=logged_in, selection='post', post_id=post_id)
+
+@app.route('/Delete_Recipe', methods=['GET', 'POST'])
+def delete_recipe():
+	global logged_in
+	global user_id
+
+	if(not logged_in):
+		flash('Error: you are not logged in', 'danger')
+		return redirect('/')
+
+	if request.method == 'POST':
+		response = request.form.get('response')
+		if response == "Yes":
+			recipe_id = request.form.get('recipe_id')
+			params = {'recipe_id': recipe_id}
+			delete_query = """DELETE FROM Recipes
+							  WHERE Recipe_ID = (:recipe_id)"""
+			
+			g.conn.execute(text(delete_query), params)
+			g.conn.commit()
+
+			flash('Your recipe was deleted.', 'danger')
+			return redirect('/Profile')
+		else:
+			flash('Your recipe was not deleted.', 'success')
+			return redirect('/Profile')
+
+	recipe_id = request.args.get('recipe_id')
+	if recipe_id:
+		params = {'recipe_id': recipe_id}
+		recipe_user_query = """Select User_ID
+							   From Recipes Natural Join Create_Recipe
+							   Where Recipe_ID = (:recipe_id)"""
+		
+		exists = g.conn.execute(text(recipe_user_query), params).fetchone()
+		if exists:
+			delete_recipe_user_id = exists[0]
+			if user_id != delete_recipe_user_id:
+				flash('You cannot delete a recipe that is not yours', 'danger')
+				return redirect('/Profile')
+		else:
+			flash('Error: this recipe does not exist', 'danger')
+			return redirect('/Profile')
+	else:
+		flash('Error: no recipe to delete', 'danger')
+		return redirect('/Profile')
+			
+	return render_template("delete_confirmation.html", logged_in=logged_in, selection='recipe', recipe_id=recipe_id)
+
+@app.route('/Delete_Collection', methods=['GET', 'POST'])
+def delete_collection():
+	global logged_in
+	global user_id
+
+	if(not logged_in):
+		flash('Error: you are not logged in', 'danger')
+		return redirect('/')
+	
+	if request.method == 'POST':
+		response = request.form.get('response')
+		if response == "Yes":
+			collection_name = request.form.get('collection_name')
+			params = {'collection_name': collection_name, 'user_id': user_id}
+			delete_query = """DELETE FROM Collections
+							  WHERE User_ID = (:user_id)
+							  AND Collection_Name = '(:collection_name)'"""
+			
+			g.conn.execute(text(delete_query), params)
+			g.conn.commit()
+
+			flash('Your collection was deleted.', 'danger')
+			return redirect('/Profile')
+		else:
+			flash('Your collection was not deleted.', 'success')
+			return redirect('/Profile')
+	
+	collection_name = request.args.get('collection_name')
+	if collection_name:
+		params = {'user_id': user_id, 'collection_name': collection_name}
+		collection_user_query = """Select *
+								   From Collections
+								   Where User_ID = (:user_id)
+								   AND Collection_Name = (:collection_name)"""
+		
+		exists = g.conn.execute(text(collection_user_query), params).fetchone()
+		if not exists:
+			flash('Error: this collection does not exist', 'danger')
+			return redirect('/Profile')
+	else:
+		flash('Error: no collection to delete', 'danger')
+		return redirect('/Profile')
+
+	return render_template("delete_confirmation.html", logged_in=logged_in, selection='collection', collection_name=collection_name)
+
 @app.route('/Delete_Account', methods=['GET', 'POST'])
 def delete_profile():
 	global logged_in
@@ -1279,7 +1445,7 @@ def delete_profile():
 			flash('Your account was not deleted.', 'success')
 			return redirect('/Profile')
 
-	return render_template("delete_confirmation.html", logged_in=logged_in)
+	return render_template("delete_confirmation.html", logged_in=logged_in, selection='account')
 
 
 if __name__ == "__main__":
