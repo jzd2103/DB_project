@@ -55,8 +55,23 @@ def home():
 	order = 'Latest'
 	if request.method == 'POST':
 		order = request.form['order']
-		
-		if order == 'Latest':
+		tag = request.form.get('tag')
+
+		if tag:
+			param = {'tag': tag}
+			select_query = """Select Tag_ID from Tags Where Tag_Name = (:tag)"""
+			tag_exists = g.conn.execute(text(select_query), param).fetchone()
+
+			if not tag_exists:
+				flash("The tag entered does not exist", 'danger')
+			else:
+				tag_id = tag_exists[0]
+			
+				post_query = f"""Select username, post_id, caption, image_URL, video_URL
+							     From Posts Natural Join Users Natural Join Make Natural Join Have_Post_Tag
+							     Where tag_id = {tag_id}"""
+
+		elif order == 'Latest':
 			post_query = """Select username, post_id, caption, image_URL, video_URL
 							From Posts Natural Join Make Natural Join Users
 							Order by Date_Posted DESC

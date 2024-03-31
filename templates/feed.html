@@ -22,8 +22,10 @@
                             {% if logged_in %}
                                 <option value="Following" {% if order == 'Following' %} selected {% endif %}>Following</option>
                             {% endif %}
-                        </select>
-                        <input type="submit" value="Sort" class = "mt-3 btn btn-outline-info">
+                        </select><br>
+                        <label for="Tag" class="form-label">Tag Name:</label><br>
+                        <input type="text" id="Tag" name="tag" class="form-control">
+                        <input type="submit" value="Filter" class = "mt-3 btn btn-outline-info">
                 </fieldset>
             </form>
         </div>
