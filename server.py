@@ -115,6 +115,10 @@ def home():
 	cursor = g.conn.execute(text(post_query))
 	posts = []
 
+	if cursor.fetchone() is None:
+		flash("No Posts exists with the applied filter", "info")
+		return redirect('/')
+
 	for username, post_id, caption, image_url, video_url in cursor:
 		comments = []
 		comment_query = """Select Username as username1, Comment
@@ -124,8 +128,6 @@ def home():
 
 		for username1, comment in comment_cursor:
 			comments.append({'username': username1, 'comment': comment})
-
-		comment_cursor.close()
 
 		rating_query = """select post_id, rating
 						  from posts natural join rate
@@ -197,6 +199,10 @@ def recipes():
 	
 	cursor = g.conn.execute(text(recipe_query))	
 	recipes = []
+
+	if cursor.fetchone() is None:
+		flash("No Recipes exists with the applied filter", "info")
+		return redirect('/Recipes')
 
 	for Recipe_ID, Username, Recipe_Name, Description, Ingredients, Directions, Cook_Time, Image_URL in cursor:
 		recipes.append({'recipe_id': Recipe_ID, 'username': Username, 'recipe_name': Recipe_Name.replace('\"', ''), 'description': Description.replace('\"', ''), 
