@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    
+    <div class="row justify-content-center">
+        <div class="col-8">
+            <h1 class="text-center pb-2 border-bottom border-3 border-light"> Posts</h1>
+        </div>
+    </div>
+
+    <div class="row justify-content-center mt-2">
+        <div class="col-7 light-background p-3 light-border">
+            <form method="POST" action="/">
+                <fieldset class="form-group">
+                    <legend class="text-center border-bottom mb-3">Sort Posts</legend>
+                        <label for="Order" class="form-label">Post Feed:</label>
+                        <select id="Order" name="order" class="form-select">
+                            <option value="Random" {% if order == 'Random' %} selected {% endif %}>Random</option>
+                            <option value="Latest" {% if order == 'Latest' %} selected {% endif %}>Latest</option>
+                            <option value="Oldest" {% if order == 'Oldest' %} selected {% endif %}>Oldest</option>
+                            <option value="Most Popular"{% if order == 'Most Popular' %} selected {% endif %}>Most Popular</option>
+                            {% if logged_in %}
+                                <option value="Following" {% if order == 'Following' %} selected {% endif %}>Following</option>
+                            {% endif %}
+                        </select>
+                        <input type="submit" value="View" class = "mt-3 btn btn-outline-info">
+                </fieldset>
+            </form>
+            <form method = "POST" action ='/'>
+                <fieldset class="form-group">
+                    <legend class="text-center border-bottom mb-3">Filter Posts</legend>
+                    <label for="Tag" class="form-label">Tag Name:</label><br>
+                    <input type="text" id="Tag" name="tag" class="form-control">
+                    <input type="submit" value="Filter" class = "mt-3 btn btn-outline-info">
+                </fieldset>
+            </form>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-8">
+            {% for post in posts %}
+                <div class="row light-border light-background m-3 p-2 justify-content-center">
+                    {% if post.image_url %}
+                        <img class="image_file" src="static\images\{{post.image_url}}">
+                    {% else %}
+                        <video class="video_file" controls>
+                            <source src="static\videos\{{post.video_url}}">
+                        </video>
+                    {% endif %}
+                    <div class="d-flex mt-1">
+                        {% if post.username != loggedin_user %}
+                            <a class="me-3 fw-bold" href="/Profile?username={{post.username}}">{{ post.username }}</a>
+                        {% else %}
+                            <a class="me-3 fw-bold" href="/Profile">{{ post.username }}</a>
+                        {% endif %}
+                        <p>{{ post.caption }}</p>
+                    </div>
+                    <div class="col-6">
+                        <a class="btn btn-info btn-block w-100" href="/rate?post_id={{ post.post_id }}&rating=1">Yum {{post.yum}}</a>
+                    </div>
+                    <div class="col-6">
+                        <a class="btn btn-danger btn-block w-100" href="/rate?post_id={{ post.post_id }}&rating=-1">Yuck {{post.yuck}}</a>
+                    </div>
+
+                    <form method="POST" action="/rate" class="row g-3 align-items-center mt-0">
+                        <input type="hidden" name="post_id" value="{{ post.post_id }}">
+
+                        <div class="col-auto ">
+                            <label for="Comment" class="col-form-label">Add Comment:</label>
+                        </div>
+                        <div class="col-auto">
+                            <input type="text" id="Comment" name="comment" class="form-control">
+                        </div>
+                        <div class="col-auto">
+                            <input type="submit" value="Add" class="btn btn-outline-info">
+                        </div>
+                        <div class="col-auto ms-auto">
+                            <a class="btn btn-outline-info" href="/add_to_collection?post_id={{ post.post_id }}">Add Post To Collection</a>
+                        </div>
+                    </form>
+
+                    <div class = "col-11 m-3 p-3 comments ">
+                        <h6 class="text-center">Comments</h6>
+                        {% if post.comments %}
+                            {% set ns = namespace(allNone=true) %}
+                            {% for c in post.comments %}
+                                {% if c.comment %}
+                                    {% set ns.allNone = false %}
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if not ns.allNone %}
+                                {% for c in post.comments %}
+                                    {% if c.comment %}
+                                        <div class="d-flex mt-1">
+                                            <p class="me-3"><strong>{{ c.username }}</strong></p>
+                                            <p>{{ c.comment }}</p>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <p>No comments yet</p>
+                            {% endif %}
+                        {% else %}
+                            <p>No comments yet</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<input type="hidden" name="username" value="{{ request.args.get('username')}}">
+
+<div class="container-fluid mt-4">
+    <div class = "row justify-content-center">
+        <div class="col-7 light-background light-border p-3">
+            <h1 class="text-center">{{ users[0].username }}'s Profile</h1>
+            <div>
+                <p><strong>Name:</strong> {{ users[0].name}}</p>
+                {% if users[0].biography != '' %}
+                    <p><strong>Biography:</strong> {{ users[0].biography }}</p>
+                {% endif %}
+                <p><strong>Address:</strong> {{ users[0].address}}</p>
+                <p><strong>Date of Birth:</strong> {{ users[0].date_of_birth}}</p>
+                <p><strong>Followers:</strong> {{ number_followers }}</p>
+                <p><strong>Following:</strong> {{ number_following }}</p>
+                {% if users[0].username == logged_in_username %}
+                    <a class="btn btn-outline-info" href="/UpdateProfile">Update Profile</a>
+                    <a class="btn btn-outline-info" href="/Delete_Account">Delete Account</a>
+                {% endif %}
+                {% if users[0].username != logged_in_username %}
+                    {% if not is_following %}
+                        <form method="POST" action="/Follow">
+                            <input type="hidden" name="followed_username" value="{{ username_viewing }}">
+                            <input type="submit" value="Follow" class = "btn btn-outline-info">
+                        </form>
+                    {% else %}
+                        <form method="POST" action="/Unfollow">
+                            <input type="hidden" name="followed_username" value="{{ username_viewing }}">
+                            <input type="submit" value="Unfollow" class = "btn btn-outline-info">
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center mt-4 ">
+        <div class="col-4 min-width">
+            <div class="row justify-content-center">
+                <div class="col-10">
+                    <h1 class="text-center pb-2 border-bottom border-3 border-light">Posts</h1>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-10">
+                    {% if not posts %}
+                        <div class="row light-border light-background m-3 p-2 justify-content-center">
+                            {{ users[0].username }} has not made any posts yet
+                        </div>
+                    {% else %}
+                        {% for post in posts %}
+                            <div class="row light-border light-background m-3 p-2 justify-content-center">
+                                {% if post.image_url %}
+                                    <img class="image_file" src="static\images\{{post.image_url}}">
+                                {% else %}
+                                    <video class="video_file" controls>
+                                        <source src="static\videos\{{post.video_url}}">
+                                    </video>
+                                {% endif %}
+                                <div class="d-flex mt-1">
+                                    <p class="me-3 fw-bold">{{ post.username }}</p>
+                                    <p>{{ post.caption }}</p>
+                                </div>
+                                {% if users[0].username == logged_in_username %}
+                                    <a class="btn btn-outline-info" href="/UpdatePost?post_id={{ post.post_id }}">Update Post</a>
+                                    <a class="btn btn-outline-info mt-2" href="/AddTag?post_id={{ post.post_id }}">Add Tag</a>
+                                    <a class="btn btn-outline-info mt-2" href="/Delete_Post?post_id={{ post.post_id }}">Delete Post</a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-4 min-width">
+            <div class="row justify-content-center">
+                <div class="col-10">
+                    <h1 class="text-center pb-2 border-bottom border-3 border-light"> Recipes</h1>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-10">
+                    {% if not recipes %}
+                        <div class="row light-border text-center light-background m-3 p-2 justify-content-center">
+                            {{ users[0].username }} has not created any recipes yet
+                        </div>
+                    {% else %}
+                        {% for recipe in recipes %}
+                            <div class="row light-border light-background m-3 p-2 justify-content-center">
+                                <div class="col-11">
+                                    <h1 class = "text-center"> {{ recipe.recipe_name }}</h1>
+                                    <p class = "text-center">by {{recipe.username }}</p>
+                                </div>
+            
+                                {% if recipe.image_file %}
+                                    <img class="mt-0 image_file" src="static\images\{{recipe.image_file}}">
+                                {% endif %}
+            
+                                <div class="d-flex mt-1">
+                                    {% if recipe.description != '' %}
+                                        <p><strong>Description:</strong> {{ recipe.description }}</p>
+                                    {% endif %}
+                                </div>
+            
+                                <div>
+                                    <p><strong>Cook time:</strong> {{ recipe.cook_time }} minutes</p>
+                                    <p><strong>Ingredients:</strong> {{ recipe.ingredients}}</p>
+                                    <p class="fw-bold">Directions:</p>
+                                    <ol>
+                                        {% for direction in recipe.directions.split('.') %}
+                                            {% if direction != '' %}
+                                                <li>{{ direction + '.' }}</li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ol>
+                                </div>
+                                {% if users[0].username == logged_in_username %}
+                                    <a class="btn btn-outline-info" href="/UpdateRecipe?recipe_id={{ recipe.recipe_id }}">Update Recipe</a>
+                                    <a class="btn btn-outline-info mt-2" href="/AddTag?recipe_id={{ recipe.recipe_id }}">Add Tag</a>
+                                    <a class="btn btn-outline-info mt-2" href="/Delete_Recipe?recipe_id={{ recipe.recipe_id }}">Delete Recipe</a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% if users[0].username == logged_in_username %}
+            <div class="col-4 min-width">
+                <div class="row justify-content-center">
+                    <div class="col-10">
+                        <h1 class="text-center pb-2 border-bottom border-3 border-light"> Collections</h1>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-10 text-center">
+                        <div class="row light-border light-background m-3 p-2 text-center justify-content-center">
+                            {% if not collections.collection_name %}
+                                {{ users[0].username }} has not created any collections yet
+                            {% else %}
+                                {% for cname in collections.collection_name %}
+                                    <div class="collection-border m-2">
+                                        <h4 class = "text-center"> {{ cname }}</h4>
+                                        <a class="btn btn-outline-info mb-2" href="/view_collection?collection_name={{ cname }}">View Collection</a>
+                                        <a class="btn btn-outline-info mb-2" href="/Delete_Collection?collection_name={{ cname }}">Delete Collection</a>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
