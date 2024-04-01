@@ -34,6 +34,7 @@
                                     {% endif %}
                                     <p>{{ post.caption }}</p>
                                 </div>
+                                <a class="btn btn-outline-info" href="/delete_from_collection?collection_name={{ collection_name }}&post_id={{ post.post_id }}">Delete From Collection</a>
                             </div>
                         {% endfor %}
                     {% endif %}
@@ -88,6 +89,7 @@
                                         {% endfor %}
                                     </ol>
                                 </div>
+                                <a class="btn btn-outline-info" href="/delete_from_collection?collection_name={{ collection_name }}&recipe_id={{ recipe.recipe_id }}">Delete From Collection</a>
                             </div>
                         {% endfor %}
                     {% endif %}

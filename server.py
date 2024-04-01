@@ -976,6 +976,110 @@ def create_collection():
 	flash('Collection created successfully', 'success')
 	return redirect('/Profile')
 
+@app.route('/delete_from_collection', methods=['GET','POST'])
+def delete_from_collection():
+	global logged_in
+	global user_id
+
+	if(not logged_in):
+		flash('You are not logged in', 'danger')
+		return redirect('/')
+	
+	if request.method == 'POST':
+		response = request.form.get('response')
+		collection_name = request.form.get('collection_name')
+		collection_id = request.form.get('collection_id')
+		post_id = request.form.get('post_id')
+		recipe_id = request.form.get('recipe_id')
+
+		if response == "Yes":
+			if post_id:
+				params = {'collection_id': collection_id, 'user_id': user_id, 'post_id': post_id}
+				delete_query = """DELETE FROM Contain_Post
+								  WHERE User_ID = (:user_id)
+								  AND Collection_ID = (:collection_id)
+								  AND Post_ID = (:post_id)"""
+				
+				g.conn.execute(text(delete_query), params)
+				g.conn.commit()
+
+				flash('The post was deleted from your collection.', 'danger')
+			else:
+				params = {'collection_id': collection_id, 'user_id': user_id, 'recipe_id': recipe_id}
+				delete_query = """DELETE FROM Contain_Recipe
+								  WHERE User_ID = (:user_id)
+								  AND Collection_ID = (:collection_id)
+								  AND Recipe_ID = (:recipe_id)"""
+				
+				g.conn.execute(text(delete_query), params)
+				g.conn.commit()
+
+				flash('The recipe was deleted from your collection.', 'danger')
+
+			return redirect(f'/view_collection?collection_name={collection_name}')
+		else:
+			if post_id:
+				flash('The post was not deleted from your collection.', 'success')
+			else:
+				flash('The recipe was not deleted from your collection.', 'success')
+			return redirect(f'/view_collection?collection_name={collection_name}')
+	
+	c_name = request.args.get('collection_name')
+	post_id = request.args.get('post_id')
+	recipe_id = request.args.get('recipe_id')
+
+	if not c_name:
+		flash('Error: no collection to delete from.', 'danger')
+		return redirect('/Profile')
+	elif not post_id and not recipe_id:
+		flash('Error: no post/recipe to delete.', 'danger')
+		return redirect(f'/view_collection?collection_name={c_name}')
+	else:
+		params = {'user_id': user_id, 'collection_name': c_name}
+		collection_id_query = """Select Collection_ID
+								 From Collections
+								 Where User_ID = (:user_id)
+								 AND Collection_Name = (:collection_name)"""
+		
+		exists = g.conn.execute(text(collection_id_query), params).fetchone()
+		if exists:
+			c_id = exists[0]
+		else:
+			flash('Error: collection does not exist', 'danger')
+			return redirect('/Profile')
+
+		if post_id:
+			params = {'user_id': user_id, 'collection_id': c_id, 'post_id': post_id}
+			check_query = """Select *
+							 From Contain_Post
+							 Where User_ID = (:user_id)
+							 AND Collection_ID = (:collection_id)
+							 AND Post_ID = (:post_id)"""
+			exists = g.conn.execute(text(check_query), params).fetchone()
+			if not exists:
+				flash('Error: post does not exist in collection', 'danger')
+				return redirect(f'/view_collection?collection_name={c_name}')
+			
+			selection = 'delete_post_c'
+			return render_template("delete_confirmation.html", logged_in=logged_in, selection=selection, collection_id=c_id, 
+						  collection_name=c_name, post_id=post_id)
+		else:
+			params = {'user_id': user_id, 'collection_id': c_id, 'recipe_id': recipe_id}
+			check_query = """Select *
+							 From Contain_Recipe
+							 Where User_ID = (:user_id)
+							 AND Collection_ID = (:collection_id)
+							 AND Recipe_ID = (:recipe_id)"""
+			exists = g.conn.execute(text(check_query), params).fetchone()
+			if not exists:
+				flash('Error: recipe does not exist in collection', 'danger')
+				return redirect(f'/view_collection?collection_name={c_name}')
+			
+			selection = 'delete_recipe_c'
+			return render_template("delete_confirmation.html", logged_in=logged_in, selection=selection, collection_id=c_id, 
+						  collection_name=c_name, recipe_id=recipe_id)
+		
+
 @app.route('/Create')
 def create():
 	global logged_in
