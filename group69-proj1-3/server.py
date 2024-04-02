@@ -245,7 +245,12 @@ def profile():
 		query = f"""Select User_ID
 					From Users
 					Where Username = (:username_viewing)"""
-		user_id_viewing = g.conn.execute(text(query), params).fetchone()[0]
+		exists = g.conn.execute(text(query), params).fetchone()
+		if not exists:
+			flash('Error: user does not exist', 'danger')
+			return redirect('/')
+		else:
+			user_id_viewing = exists[0]
 
 		if user_id != user_id_viewing:
 			params = {'follower_id': user_id, 'followed_id': user_id_viewing}
